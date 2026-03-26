@@ -20,7 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 const schema = z.object({
   name: z.string().min(1, "Obrigatório"),
   phone: z.string().min(9, "Número inválido"),
-  pin: z.string().min(4, "PIN mínimo 4 dígitos").max(6, "PIN máximo 6 dígitos").regex(/^\d+$/, "Apenas dígitos"),
+  pin: z.string().min(4, "Mínimo 4 caracteres"),
   role: z.enum(["admin", "driver"]),
   vehicleId: z.coerce.number().optional().nullable(),
   active: z.boolean().optional(),
@@ -115,7 +115,7 @@ export default function AdminUsers() {
               <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nome *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Telefone *</FormLabel><FormControl><Input placeholder="+244 9XX XXX XXX" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="pin" render={({ field }) => (<FormItem><FormLabel>PIN {editUser ? "(opcional)" : "*"}</FormLabel><FormControl><Input type="password" placeholder="4-6 dígitos" maxLength={6} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="pin" render={({ field }) => (<FormItem><FormLabel>Palavra-passe {editUser ? "(opcional)" : "*"}</FormLabel><FormControl><Input type="password" placeholder="Mínimo 4 caracteres" {...field} /></FormControl><FormMessage /></FormItem>)} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Perfil *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="driver">Motorista</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />

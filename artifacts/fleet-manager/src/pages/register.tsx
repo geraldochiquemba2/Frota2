@@ -14,9 +14,9 @@ import { useQueryClient } from "@tanstack/react-query";
 const schema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   phone: z.string().min(9, "Número inválido"),
-  pin: z.string().min(4, "PIN mínimo 4 dígitos").max(6, "PIN máximo 6 dígitos").regex(/^\d+$/, "Apenas dígitos"),
+  pin: z.string().min(4, "Mínimo 4 caracteres"),
   confirmPin: z.string().min(4),
-}).refine(d => d.pin === d.confirmPin, { message: "Os PINs não coincidem", path: ["confirmPin"] });
+}).refine(d => d.pin === d.confirmPin, { message: "As palavras-passe não coincidem", path: ["confirmPin"] });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -120,11 +120,11 @@ export default function Register() {
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="pin" render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-muted-foreground uppercase tracking-wider text-xs font-semibold">PIN</FormLabel>
+                  <FormLabel className="text-muted-foreground uppercase tracking-wider text-xs font-semibold">Palavra-passe</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                      <Input type="password" placeholder="4-6 dígitos" maxLength={6} className="pl-10 h-12 bg-background/50 border-border" {...field} />
+                      <Input type="password" placeholder="Mínimo 4 caracteres" className="pl-10 h-12 bg-background/50 border-border" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -133,11 +133,11 @@ export default function Register() {
 
               <FormField control={form.control} name="confirmPin" render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-muted-foreground uppercase tracking-wider text-xs font-semibold">Confirmar PIN</FormLabel>
+                  <FormLabel className="text-muted-foreground uppercase tracking-wider text-xs font-semibold">Confirmar Palavra-passe</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                      <Input type="password" placeholder="Repita o PIN" maxLength={6} className="pl-10 h-12 bg-background/50 border-border" {...field} />
+                      <Input type="password" placeholder="Repita a palavra-passe" className="pl-10 h-12 bg-background/50 border-border" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />

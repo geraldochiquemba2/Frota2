@@ -16,11 +16,11 @@ function normalizePhone(raw: string): string {
 router.post("/register", async (req, res) => {
   const { name, phone: rawPhone, pin, role } = req.body;
   if (!name || !rawPhone || !pin) {
-    res.status(400).json({ error: "Nome, telefone e PIN são obrigatórios" });
+    res.status(400).json({ error: "Nome, telefone e palavra-passe são obrigatórios" });
     return;
   }
-  if (pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin)) {
-    res.status(400).json({ error: "PIN deve ter 4 a 6 dígitos" });
+  if (pin.length < 4) {
+    res.status(400).json({ error: "A palavra-passe deve ter pelo menos 4 caracteres" });
     return;
   }
   const phone = normalizePhone(String(rawPhone));
@@ -42,14 +42,14 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { phone: rawPhone, pin } = req.body;
   if (!rawPhone || !pin) {
-    res.status(400).json({ error: "Telefone e PIN são obrigatórios" });
+    res.status(400).json({ error: "Telefone e palavra-passe são obrigatórios" });
     return;
   }
   const phone = normalizePhone(String(rawPhone));
   const users = await db.select().from(usersTable).where(eq(usersTable.phone, phone));
   const user = users[0];
   if (!user || user.pin !== String(pin)) {
-    res.status(401).json({ error: "Telefone ou PIN inválido" });
+    res.status(401).json({ error: "Telefone ou palavra-passe inválido" });
     return;
   }
   if (!user.active) {

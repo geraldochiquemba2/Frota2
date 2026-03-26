@@ -15,7 +15,7 @@ import { Link } from "wouter";
 
 const loginSchema = z.object({
   phone: z.string().min(5, "Número inválido"),
-  pin: z.string().min(4, "PIN obrigatório").max(6),
+  pin: z.string().min(4, "Palavra-passe obrigatória"),
 });
 
 function normalizePhone(raw: string): string {
@@ -55,7 +55,7 @@ export default function Login() {
       onError: (error) => {
         toast({
           title: "Acesso negado",
-          description: (error as any)?.data?.error || "Número ou PIN inválido",
+          description: (error as any)?.data?.error || "Número ou palavra-passe inválido",
           variant: "destructive",
         });
       },
@@ -118,11 +118,11 @@ export default function Login() {
               name="pin"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-muted-foreground uppercase tracking-wider text-xs font-semibold">Código PIN</FormLabel>
+                  <FormLabel className="text-muted-foreground uppercase tracking-wider text-xs font-semibold">Palavra-passe</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                      <Input type="password" placeholder="••••" maxLength={6} className="pl-10 h-12 bg-background/50 border-border" {...field} />
+                      <Input type="password" placeholder="••••••••" className="pl-10 h-12 bg-background/50 border-border" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
