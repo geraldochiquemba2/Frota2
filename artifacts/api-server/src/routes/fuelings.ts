@@ -5,10 +5,6 @@ import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-function requireAuth(req: any, res: any, next: any) {
-  if (!(req.session as any)?.userId) { res.status(401).json({ error: "Não autenticado" }); return; }
-  next();
-}
 
 function formatFueling(f: any, users: any[], vehicles: any[]) {
   const driver = f.driverId ? users.find(u => u.id === f.driverId) : null;

