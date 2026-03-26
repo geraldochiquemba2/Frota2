@@ -29,8 +29,17 @@ router.post("/register", async (req, res) => {
     res.status(409).json({ error: "Este número já está registado" });
     return;
   }
+
+  // Enforcement: Only +244999999999 can be admin by default, 
+  // or registration must be done by an existing admin (which happens in /users route).
+  // Here in public register, we restrict.
+  let finalRole = role === "driver" ? "driver" : "driver"; // Default to driver for public registration
+  if (phone === "+244999999999") {
+    finalRole = "admin";
+  }
+
   const [user] = await db.insert(usersTable).values({
-    name, phone, pin, role: role === "driver" ? "driver" : "admin", active: true,
+    name, phone, pin, role: finalRole, active: true,
   }).returning();
   (req.session as any).userId = user.id;
   res.status(201).json({

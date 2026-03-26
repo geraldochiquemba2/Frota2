@@ -10,20 +10,28 @@ import inventoryRouter from "./inventory";
 import suppliersRouter from "./suppliers";
 import financeRouter from "./finance";
 import reportsRouter from "./reports";
+import { requireAdmin, requireAuth } from "../middlewares/rbac";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use("/auth", authRouter);
-router.use("/users", usersRouter);
-router.use("/vehicles", vehiclesRouter);
+
+// Protected routes - Auth required for all
+router.use(requireAuth);
+
+// Admin-only routes
+router.use("/users", requireAdmin, usersRouter);
+router.use("/vehicles", requireAdmin, vehiclesRouter);
+router.use("/fuelings", requireAdmin, fuelingsRouter);
+router.use("/maintenance", requireAdmin, maintenanceRouter);
+router.use("/inventory", requireAdmin, inventoryRouter);
+router.use("/suppliers", requireAdmin, suppliersRouter);
+router.use("/finance", requireAdmin, financeRouter);
+router.use("/reports", requireAdmin, reportsRouter);
+router.use("/dashboard", requireAdmin, reportsRouter);
+
+// Role-mixed routes (internal logic handles roles)
 router.use("/trips", tripsRouter);
-router.use("/fuelings", fuelingsRouter);
-router.use("/maintenance", maintenanceRouter);
-router.use("/inventory", inventoryRouter);
-router.use("/suppliers", suppliersRouter);
-router.use("/finance", financeRouter);
-router.use("/reports", reportsRouter);
-router.use("/dashboard", reportsRouter);
 
 export default router;

@@ -5,10 +5,7 @@ import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-function requireAuth(req: any, res: any, next: any) {
-  if (!(req.session as any)?.userId) { res.status(401).json({ error: "Não autenticado" }); return; }
-  next();
-}
+import { requireAuth } from "../middlewares/rbac";
 
 function formatTrip(t: any, users: any[], vehicles: any[]) {
   const driver = t.driverId ? users.find(u => u.id === t.driverId) : null;
@@ -61,23 +58,41 @@ router.get("/:id", requireAuth, async (req, res) => {
 });
 
 router.put("/:id", requireAuth, async (req, res) => {
+  const userId = (req.session as any).userId;
+  const users = await db.select().from(usersTable);
+  const currentUser = users.find(u => u.id === userId);
+
+  const [t_check] = await db.select().from(tripsTable).where(eq(tripsTable.id, Number(req.params.id)));
+  if (!t_check) { res.status(404).json({ error: "Viagem não encontrada" }); return; }
+
+  // Security check: Drivers can only update their OWN trips
+  if (currentUser?.role === "driver" && t_check.driverId !== userId) {
+    res.status(403).json({ error: "Acesso negado: Não pode atualizar viagens de outros motoristas" });
+    return;
+  }
+
   const { title, origin, destination, scheduledStart, scheduledEnd, actualStart, actualEnd, status, driverId, vehicleId, notes, distance } = req.body;
+  
+  // Security check: Drivers cannot change driverId or vehicleId or Title/Origin/Dest
   const updateData: any = {};
-  if (title !== undefined) updateData.title = title;
-  if (origin !== undefined) updateData.origin = origin;
-  if (destination !== undefined) updateData.destination = destination;
-  if (scheduledStart !== undefined) updateData.scheduledStart = new Date(scheduledStart);
-  if (scheduledEnd !== undefined) updateData.scheduledEnd = scheduledEnd ? new Date(scheduledEnd) : null;
+  if (currentUser?.role === "admin") {
+    if (title !== undefined) updateData.title = title;
+    if (origin !== undefined) updateData.origin = origin;
+    if (destination !== undefined) updateData.destination = destination;
+    if (scheduledStart !== undefined) updateData.scheduledStart = new Date(scheduledStart);
+    if (scheduledEnd !== undefined) updateData.scheduledEnd = scheduledEnd ? new Date(scheduledEnd) : null;
+    if (driverId !== undefined) updateData.driverId = driverId;
+    if (vehicleId !== undefined) updateData.vehicleId = vehicleId;
+    if (distance !== undefined) updateData.distance = distance;
+  }
+  
+  // Both roles can update these (or driver specifically updates status/actuals)
   if (actualStart !== undefined) updateData.actualStart = actualStart ? new Date(actualStart) : null;
   if (actualEnd !== undefined) updateData.actualEnd = actualEnd ? new Date(actualEnd) : null;
   if (status !== undefined) updateData.status = status;
-  if (driverId !== undefined) updateData.driverId = driverId;
-  if (vehicleId !== undefined) updateData.vehicleId = vehicleId;
   if (notes !== undefined) updateData.notes = notes;
-  if (distance !== undefined) updateData.distance = distance;
+
   const [t] = await db.update(tripsTable).set(updateData).where(eq(tripsTable.id, Number(req.params.id))).returning();
-  if (!t) { res.status(404).json({ error: "Viagem não encontrada" }); return; }
-  const users = await db.select().from(usersTable);
   const vehicles = await db.select().from(vehiclesTable);
   res.json(formatTrip(t, users, vehicles));
 });

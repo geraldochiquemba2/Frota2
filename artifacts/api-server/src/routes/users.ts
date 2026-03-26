@@ -2,28 +2,10 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { usersTable, vehiclesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAdmin } from "../middlewares/rbac";
 
 const router: IRouter = Router();
 
-function requireAuth(req: any, res: any, next: any) {
-  if (!(req.session as any)?.userId) {
-    res.status(401).json({ error: "Não autenticado" });
-    return;
-  }
-  next();
-}
-
-function requireAdmin(req: any, res: any, next: any) {
-  requireAuth(req, res, async () => {
-    const users = await db.select().from(usersTable).where(eq(usersTable.id, (req.session as any).userId));
-    if (!users[0] || users[0].role !== "admin") {
-      res.status(403).json({ error: "Acesso negado" });
-      return;
-    }
-    (req as any).currentUser = users[0];
-    next();
-  });
-}
 
 router.get("/", requireAdmin, async (req, res) => {
   const users = await db.select().from(usersTable);

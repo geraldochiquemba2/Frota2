@@ -2,13 +2,10 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { financeRecordsTable, vehiclesTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAdmin, requireAuth } from "../middlewares/rbac";
 
 const router: IRouter = Router();
 
-function requireAuth(req: any, res: any, next: any) {
-  if (!(req.session as any)?.userId) { res.status(401).json({ error: "Não autenticado" }); return; }
-  next();
-}
 
 function formatRecord(r: any, vehicles: any[]) {
   const vehicle = r.vehicleId ? vehicles.find(v => v.id === r.vehicleId) : null;
