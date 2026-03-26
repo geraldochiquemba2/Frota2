@@ -42,7 +42,7 @@ export default function AdminFinance() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/finance"] });
         setIsDialogOpen(false);
-        toast({ title: "Record added" });
+        toast({ title: "Registo adicionado" });
       }
     }
   });
@@ -51,7 +51,7 @@ export default function AdminFinance() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/finance"] });
-        toast({ title: "Record deleted" });
+        toast({ title: "Registo eliminado" });
       }
     }
   });
@@ -69,28 +69,28 @@ export default function AdminFinance() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-display font-bold">Finance Ledger</h1>
-          <p className="text-muted-foreground">Track incomes and expenses</p>
+          <h1 className="text-2xl font-display font-bold">Finanças</h1>
+          <p className="text-muted-foreground">Acompanhar receitas e despesas</p>
         </div>
         <Button onClick={() => { form.reset(); setIsDialogOpen(true); }}>
-          <Plus className="w-4 h-4 mr-2" /> Add Record
+          <Plus className="w-4 h-4 mr-2" /> Adicionar Registo
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-card p-4 rounded-xl border border-border">
-          <p className="text-sm text-muted-foreground">Balance</p>
+          <p className="text-sm text-muted-foreground">Saldo</p>
           <p className={`text-2xl font-bold font-mono ${totalIncome - totalExpense >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-            ${(totalIncome - totalExpense).toLocaleString(undefined, {minimumFractionDigits: 2})}
+            {(totalIncome - totalExpense).toLocaleString(undefined, {minimumFractionDigits: 2})} Kz
           </p>
         </div>
         <div className="bg-card p-4 rounded-xl border border-border">
-          <p className="text-sm text-muted-foreground">Total Income</p>
-          <p className="text-2xl font-bold font-mono text-emerald-500">${totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+          <p className="text-sm text-muted-foreground">Total Receitas</p>
+          <p className="text-2xl font-bold font-mono text-emerald-500">{totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2})} Kz</p>
         </div>
         <div className="bg-card p-4 rounded-xl border border-border">
-          <p className="text-sm text-muted-foreground">Total Expense</p>
-          <p className="text-2xl font-bold font-mono text-rose-500">${totalExpense.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+          <p className="text-sm text-muted-foreground">Total Despesas</p>
+          <p className="text-2xl font-bold font-mono text-rose-500">{totalExpense.toLocaleString(undefined, {minimumFractionDigits: 2})} Kz</p>
         </div>
       </div>
 
@@ -98,21 +98,21 @@ export default function AdminFinance() {
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Details</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="text-right"></TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Detalhes</TableHead>
+              <TableHead className="text-right">Montante</TableHead>
+              <TableHead className="text-right">Ação</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {records?.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(r => (
               <TableRow key={r.id}>
-                <TableCell className="text-muted-foreground text-sm">{format(new Date(r.date), "MMM d, yyyy")}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{format(new Date(r.date), "dd/MM/yyyy")}</TableCell>
                 <TableCell>
                   {r.type === 'income' ? 
-                    <span className="flex items-center text-emerald-500 text-xs font-semibold uppercase bg-emerald-500/10 w-fit px-2 py-1 rounded"><ArrowUpRight className="w-3 h-3 mr-1"/> Income</span> : 
-                    <span className="flex items-center text-rose-500 text-xs font-semibold uppercase bg-rose-500/10 w-fit px-2 py-1 rounded"><ArrowDownRight className="w-3 h-3 mr-1"/> Expense</span>
+                    <span className="flex items-center text-emerald-500 text-xs font-semibold uppercase bg-emerald-500/10 w-fit px-2 py-1 rounded"><ArrowUpRight className="w-3 h-3 mr-1"/> Receita</span> : 
+                    <span className="flex items-center text-rose-500 text-xs font-semibold uppercase bg-rose-500/10 w-fit px-2 py-1 rounded"><ArrowDownRight className="w-3 h-3 mr-1"/> Despesa</span>
                   }
                 </TableCell>
                 <TableCell>
@@ -120,10 +120,10 @@ export default function AdminFinance() {
                   <div className="text-xs text-muted-foreground">{r.category} {r.vehiclePlate ? `• ${r.vehiclePlate}` : ''}</div>
                 </TableCell>
                 <TableCell className={`text-right font-mono font-bold ${r.type === 'income' ? 'text-emerald-500' : 'text-foreground'}`}>
-                  {r.type === 'income' ? '+' : '-'}${r.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                  {r.type === 'income' ? '+' : '-'}{r.amount.toLocaleString(undefined, {minimumFractionDigits: 2})} Kz
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => confirm("Delete?") && deleteMutation.mutate({ id: r.id })}>
+                  <Button variant="ghost" size="icon" onClick={() => confirm("Eliminar?") && deleteMutation.mutate({ id: r.id })}>
                     <Trash2 className="w-4 h-4 text-red-400" />
                   </Button>
                 </TableCell>
@@ -135,36 +135,36 @@ export default function AdminFinance() {
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-card">
-          <DialogHeader><DialogTitle>Add Financial Record</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Adicionar Registo Financeiro</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="type" render={({ field }) => (
-                  <FormItem><FormLabel>Type</FormLabel>
+                  <FormItem><FormLabel>Tipo</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="expense">Expense</SelectItem>
-                        <SelectItem value="income">Income</SelectItem>
+                        <SelectItem value="expense">Despesa</SelectItem>
+                        <SelectItem value="income">Receita</SelectItem>
                       </SelectContent>
                     </Select>
                   <FormMessage/></FormItem>
                 )}/>
                 <FormField control={form.control} name="date" render={({ field }) => (
-                  <FormItem><FormLabel>Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage/></FormItem>
+                  <FormItem><FormLabel>Data</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage/></FormItem>
                 )}/>
               </div>
               <FormField control={form.control} name="category" render={({ field }) => (
-                <FormItem><FormLabel>Category (e.g. Fuel, Maintenance, Client Payment)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>
+                <FormItem><FormLabel>Categoria (Ex: Combustível, Manutenção, Pagamento)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>
               )}/>
               <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem><FormLabel>Description</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>
+                <FormItem><FormLabel>Descrição</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>
               )}/>
               <FormField control={form.control} name="amount" render={({ field }) => (
-                <FormItem><FormLabel>Amount ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage/></FormItem>
+                <FormItem><FormLabel>Montante (Kz)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage/></FormItem>
               )}/>
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={createMutation.isPending}>Save Record</Button>
+                <Button type="submit" disabled={createMutation.isPending}>Guardar Registo</Button>
               </div>
             </form>
           </Form>

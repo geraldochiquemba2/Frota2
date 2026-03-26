@@ -158,7 +158,7 @@ export default function AdminMaintenance() {
                 <TableCell>{m.type}</TableCell>
                 <TableCell className="max-w-xs truncate">{m.description}</TableCell>
                 <TableCell><Badge className={statusColors[m.status] || ""}>{m.status === "scheduled" ? "Agendado" : m.status === "in_progress" ? "Em Curso" : "Concluído"}</Badge></TableCell>
-                <TableCell>{m.cost ? `${m.cost.toFixed(2)} €` : "-"}</TableCell>
+                <TableCell>{m.cost ? `${m.cost.toFixed(2)} Kz` : "-"}</TableCell>
                 <TableCell>{m.supplierName || "-"}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
@@ -213,7 +213,7 @@ export default function AdminMaintenance() {
               )} />
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="cost" render={({ field }) => (
-                  <FormItem><FormLabel>Custo (€)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : null)} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Custo (Kz)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : null)} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="mileage" render={({ field }) => (
                   <FormItem><FormLabel>Km</FormLabel><FormControl><Input type="number" placeholder="Quilometragem" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : null)} /></FormControl><FormMessage /></FormItem>

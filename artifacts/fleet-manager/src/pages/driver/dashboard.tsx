@@ -24,7 +24,7 @@ export default function DriverDashboard() {
         <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20 overflow-hidden relative">
           <div className="absolute right-0 top-0 w-32 h-32 bg-primary/10 rounded-bl-full" />
           <CardContent className="p-6">
-            <h3 className="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Current Assignment</h3>
+            <h3 className="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Viatura Atual</h3>
             <div className="flex items-end gap-4 mt-2">
               <div>
                 <p className="text-3xl font-display font-bold font-mono text-foreground">{assignedVehicle.plate}</p>
@@ -36,7 +36,7 @@ export default function DriverDashboard() {
       ) : (
         <Card className="border-dashed bg-muted/10">
           <CardContent className="p-6 text-center text-muted-foreground">
-            No vehicle assigned currently.
+            Nenhuma viatura atribuída de momento.
           </CardContent>
         </Card>
       )}
@@ -46,7 +46,7 @@ export default function DriverDashboard() {
         <div>
           <h2 className="text-lg font-display font-bold mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Active Trip
+            Viagem em Curso
           </h2>
           <Link href="/driver/trips">
             <Card className="border-emerald-500/30 hover:border-emerald-500/50 transition-colors cursor-pointer bg-card/80 backdrop-blur">
@@ -70,17 +70,17 @@ export default function DriverDashboard() {
 
       {/* Upcoming Trips */}
       <div>
-        <h2 className="text-lg font-display font-bold mb-3">Upcoming Schedule</h2>
+        <h2 className="text-lg font-display font-bold mb-3">Agendamentos</h2>
         <div className="space-y-3">
           {upcomingTrips.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No pending trips assigned.</p>
+            <p className="text-muted-foreground text-center py-8">Não tem viagens agendadas.</p>
           ) : (
             upcomingTrips.slice(0, 3).map(trip => (
               <Card key={trip.id} className="bg-card">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-semibold">{trip.title}</h4>
-                    <span className="text-xs font-medium text-blue-400 bg-blue-400/10 px-2 py-1 rounded-md">Pending</span>
+                    <span className="text-xs font-medium text-blue-400 bg-blue-400/10 px-2 py-1 rounded-md">Pendente</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {format(new Date(trip.scheduledStart), "MMM d")}</div>

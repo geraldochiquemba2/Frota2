@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/dashboard", label: "Painel Central", icon: LayoutDashboard },
   { href: "/admin/vehicles", label: "Viaturas", icon: Truck },
   { href: "/admin/trips", label: "Viagens", icon: Map },
   { href: "/admin/fuelings", label: "Abastecimentos", icon: Droplets },
@@ -32,9 +32,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     <>
       <div className="p-6">
         <h2 className="text-2xl font-display font-bold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
-          NEXUS Fleet
+          NEXUS Frota
         </h2>
-        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-semibold">Admin Portal</p>
+        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider font-semibold">Portal de Administração</p>
       </div>
 
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
@@ -80,7 +80,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Header & Sidebar */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-card border-b border-border flex items-center justify-between px-4 z-30">
-        <h2 className="text-xl font-display font-bold text-primary">NEXUS Fleet</h2>
+        <h2 className="text-xl font-display font-bold text-primary">NEXUS Frota</h2>
         <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(true)}>
           <Menu className="w-6 h-6" />
         </Button>

@@ -13,15 +13,15 @@ export default function DriverVehicle() {
     return (
       <div className="text-center py-20 text-muted-foreground">
         <Truck className="w-16 h-16 mx-auto mb-4 opacity-20" />
-        <h2 className="text-xl font-display font-bold text-foreground">No Vehicle Assigned</h2>
-        <p>Contact dispatch to get a vehicle assignment.</p>
+        <h2 className="text-xl font-display font-bold text-foreground">Nenhuma viatura atribuída</h2>
+        <p>Contacte o administrador para ser atribuído a uma viatura.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-display font-bold">My Vehicle</h1>
+      <h1 className="text-2xl font-display font-bold">A Minha Viatura</h1>
       
       <Card className="bg-card border-primary/20 overflow-hidden relative shadow-lg shadow-primary/5">
         <div className="absolute right-0 top-0 opacity-5 w-64 h-64 -mr-10 -mt-10">
@@ -41,27 +41,29 @@ export default function DriverVehicle() {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-background/50 p-4 rounded-xl border border-border">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <Calendar className="w-4 h-4" /> <span className="text-sm">Year</span>
+                <Calendar className="w-4 h-4" /> <span className="text-sm">Ano</span>
               </div>
               <p className="text-lg font-semibold">{vehicle.year}</p>
             </div>
             <div className="bg-background/50 p-4 rounded-xl border border-border">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <Navigation className="w-4 h-4" /> <span className="text-sm">Mileage</span>
+                <Navigation className="w-4 h-4" /> <span className="text-sm">Quilometragem</span>
               </div>
               <p className="text-lg font-semibold font-mono">{vehicle.mileage.toLocaleString()} km</p>
             </div>
             <div className="bg-background/50 p-4 rounded-xl border border-border">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <Droplet className="w-4 h-4" /> <span className="text-sm">Fuel</span>
+                <Droplet className="w-4 h-4" /> <span className="text-sm">Combustível</span>
               </div>
               <p className="text-lg font-semibold capitalize">{vehicle.fuelType}</p>
             </div>
             <div className="bg-background/50 p-4 rounded-xl border border-border">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <Settings className="w-4 h-4" /> <span className="text-sm">Status</span>
+                <Settings className="w-4 h-4" /> <span className="text-sm">Estado</span>
               </div>
-              <p className="text-lg font-semibold capitalize text-emerald-500">{vehicle.status}</p>
+              <p className="text-lg font-semibold capitalize text-emerald-500">
+                {vehicle.status === 'active' ? 'Ativo' : vehicle.status === 'maintenance' ? 'Em Manutenção' : 'Inativo'}
+              </p>
             </div>
           </div>
         </CardContent>

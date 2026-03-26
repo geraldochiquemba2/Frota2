@@ -133,8 +133,8 @@ export default function AdminFuelings() {
                 <TableCell className="font-medium">{f.vehiclePlate || f.vehicleId}</TableCell>
                 <TableCell>{f.driverName || "-"}</TableCell>
                 <TableCell>{f.liters.toFixed(1)} L</TableCell>
-                <TableCell>{f.pricePerLiter.toFixed(3)} €</TableCell>
-                <TableCell className="font-semibold">{f.totalCost.toFixed(2)} €</TableCell>
+                <TableCell>{f.pricePerLiter.toFixed(3)} Kz</TableCell>
+                <TableCell className="font-semibold">{f.totalCost.toFixed(2)} Kz</TableCell>
                 <TableCell>{f.mileage.toLocaleString()} km</TableCell>
                 <TableCell>{f.station || "-"}</TableCell>
                 <TableCell className="text-right">
@@ -184,7 +184,7 @@ export default function AdminFuelings() {
                   <FormItem><FormLabel>Preço/L *</FormLabel><FormControl><Input type="number" step="0.001" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="totalCost" render={({ field }) => (
-                  <FormItem><FormLabel>Total (€) *</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Total (Kz) *</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
               <div className="grid grid-cols-2 gap-4">

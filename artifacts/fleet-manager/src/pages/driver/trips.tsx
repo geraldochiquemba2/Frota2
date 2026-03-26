@@ -31,7 +31,7 @@ export default function DriverTrips() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
-        toast({ title: "Trip status updated" });
+        toast({ title: "Estado da viagem atualizado" });
       }
     }
   });
@@ -55,13 +55,13 @@ export default function DriverTrips() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-display font-bold">My Trips</h1>
+      <h1 className="text-2xl font-display font-bold">As Minhas Viagens</h1>
 
       <div className="space-y-4">
         {myTrips.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             <Navigation className="w-12 h-12 mx-auto mb-4 opacity-20" />
-            <p>You have no assigned trips.</p>
+            <p>Não tem viagens atribuídas.</p>
           </div>
         )}
 
@@ -79,26 +79,26 @@ export default function DriverTrips() {
                     ${isActive ? 'bg-primary/20 text-primary' : 
                       isPending ? 'bg-orange-500/20 text-orange-500' : 
                       isDone ? 'bg-emerald-500/20 text-emerald-500' : 'bg-muted text-muted-foreground'}`}>
-                    {trip.status.replace('_', ' ')}
+                    {trip.status === 'in_progress' ? 'Em Curso' : trip.status === 'pending' ? 'Pendente' : trip.status === 'completed' ? 'Concluída' : 'Cancelada'}
                   </span>
                 </div>
 
                 <div className="relative pl-4 border-l-2 border-muted space-y-4">
                   <div className="relative">
                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-border border-2 border-background" />
-                    <p className="text-xs text-muted-foreground uppercase">Origin</p>
+                    <p className="text-xs text-muted-foreground uppercase">Origem</p>
                     <p className="font-medium">{trip.origin}</p>
                   </div>
                   <div className="relative">
                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" />
-                    <p className="text-xs text-muted-foreground uppercase">Destination</p>
+                    <p className="text-xs text-muted-foreground uppercase">Destino</p>
                     <p className="font-medium">{trip.destination}</p>
                   </div>
                 </div>
 
                 <div className="mt-4 text-sm text-muted-foreground flex gap-4">
-                  <div><span className="font-medium text-foreground">Scheduled:</span> {format(new Date(trip.scheduledStart), "MMM d, HH:mm")}</div>
-                  {trip.vehiclePlate && <div><span className="font-medium text-foreground">Vehicle:</span> {trip.vehiclePlate}</div>}
+                  <div><span className="font-medium text-foreground">Agendado:</span> {format(new Date(trip.scheduledStart), "dd MMM, HH:mm")}</div>
+                  {trip.vehiclePlate && <div><span className="font-medium text-foreground">Viatura:</span> {trip.vehiclePlate}</div>}
                 </div>
               </CardContent>
               
@@ -110,7 +110,7 @@ export default function DriverTrips() {
                       onClick={() => handleStatusChange(trip, "in_progress")}
                       disabled={updateMutation.isPending}
                     >
-                      <Navigation className="w-4 h-4 mr-2" /> Start Trip
+                      <Navigation className="w-4 h-4 mr-2" /> Iniciar Viagem
                     </Button>
                   )}
                   {isActive && (
@@ -119,7 +119,7 @@ export default function DriverTrips() {
                       onClick={() => handleStatusChange(trip, "completed")}
                       disabled={updateMutation.isPending}
                     >
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> Mark Completed
+                      <CheckCircle2 className="w-4 h-4 mr-2" /> Marcar Concluída
                     </Button>
                   )}
                 </CardFooter>
@@ -127,12 +127,12 @@ export default function DriverTrips() {
               {isActive && (
                 <div className="h-64 w-full relative z-0 mt-4 rounded-b-xl overflow-hidden border-t">
                   <MapContainer 
-                    center={[38.7223, -9.1393]} // Default to Lisbon center for demonstration
+                    center={[-8.8368, 13.2343]} // Centrado em Luanda, Angola
                     zoom={12} 
                     style={{ height: "100%", width: "100%" }}
                   >
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-                    <Marker position={[38.7223, -9.1393]}>
+                    <Marker position={[-8.8368, 13.2343]}>
                       <Popup>Localização Atual</Popup>
                     </Marker>
                   </MapContainer>

@@ -118,7 +118,7 @@ export default function AdminInventory() {
                     <TableCell>{item.unit}</TableCell>
                     <TableCell>{item.currentStock}</TableCell>
                     <TableCell>{item.minStock}</TableCell>
-                    <TableCell>{item.unitPrice ? `${item.unitPrice.toFixed(2)} €` : "-"}</TableCell>
+                    <TableCell>{item.unitPrice ? `${item.unitPrice.toFixed(2)} Kz` : "-"}</TableCell>
                     <TableCell>{item.supplierName || "-"}</TableCell>
                     <TableCell>{item.currentStock <= item.minStock ? <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20">Stock Baixo</Badge> : <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">OK</Badge>}</TableCell>
                     <TableCell className="text-right">
@@ -175,7 +175,7 @@ export default function AdminInventory() {
                 <FormField control={itemForm.control} name="minStock" render={({ field }) => (<FormItem><FormLabel>Stock Mín. *</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <FormField control={itemForm.control} name="unitPrice" render={({ field }) => (<FormItem><FormLabel>Preço Unit.</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : null)} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={itemForm.control} name="unitPrice" render={({ field }) => (<FormItem><FormLabel>Preço Unit. (Kz)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : null)} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={itemForm.control} name="supplierId" render={({ field }) => (<FormItem><FormLabel>Fornecedor</FormLabel><Select onValueChange={v => field.onChange(v === "none" ? null : Number(v))} value={field.value?.toString() || "none"}><FormControl><SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger></FormControl><SelectContent><SelectItem value="none">Nenhum</SelectItem>{suppliers?.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
               </div>
               <FormField control={itemForm.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notas</FormLabel><FormControl><Input placeholder="Observações..." {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>)} />

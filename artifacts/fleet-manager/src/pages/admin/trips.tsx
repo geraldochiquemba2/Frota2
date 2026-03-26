@@ -18,10 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 
 const tripSchema = z.object({
-  title: z.string().min(1, "Title required"),
-  origin: z.string().min(1, "Origin required"),
-  destination: z.string().min(1, "Destination required"),
-  scheduledStart: z.string().min(1, "Start date required"),
+  title: z.string().min(1, "Título obrigatório"),
+  origin: z.string().min(1, "Origem obrigatória"),
+  destination: z.string().min(1, "Destino obrigatório"),
+  scheduledStart: z.string().min(1, "Data de início obrigatória"),
   scheduledEnd: z.string().optional().nullable(),
   driverId: z.coerce.number().optional().nullable(),
   vehicleId: z.coerce.number().optional().nullable(),
@@ -57,7 +57,7 @@ export default function AdminTrips() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
         setIsDialogOpen(false);
-        toast({ title: "Trip created" });
+        toast({ title: "Viagem criada com sucesso" });
       }
     }
   });
@@ -67,7 +67,7 @@ export default function AdminTrips() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
         setIsDialogOpen(false);
-        toast({ title: "Trip updated" });
+        toast({ title: "Viagem atualizada" });
       }
     }
   });
@@ -76,7 +76,7 @@ export default function AdminTrips() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
-        toast({ title: "Trip deleted" });
+        toast({ title: "Viagem eliminada" });
       }
     }
   });
@@ -132,11 +132,11 @@ export default function AdminTrips() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-display font-bold">Dispatch & Trips</h1>
-          <p className="text-muted-foreground">Manage scheduling and routes</p>
+          <h1 className="text-2xl font-display font-bold">Viagens e Agendamentos</h1>
+          <p className="text-muted-foreground">Gerir planeamentos e rotas das viaturas</p>
         </div>
         <Button onClick={openCreate} className="shadow-lg">
-          <Plus className="w-4 h-4 mr-2" /> New Trip
+          <Plus className="w-4 h-4 mr-2" /> Nova Viagem
         </Button>
       </div>
 
@@ -144,12 +144,12 @@ export default function AdminTrips() {
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead>Trip Info</TableHead>
-              <TableHead>Route</TableHead>
-              <TableHead>Assignment</TableHead>
-              <TableHead>Schedule</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Informação</TableHead>
+              <TableHead>Rota</TableHead>
+              <TableHead>Atribuição</TableHead>
+              <TableHead>Horário</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -158,21 +158,21 @@ export default function AdminTrips() {
                 <TableCell className="font-medium text-foreground">{t.title}</TableCell>
                 <TableCell>
                   <div className="text-sm font-medium">{t.origin}</div>
-                  <div className="text-xs text-muted-foreground">to {t.destination}</div>
+                  <div className="text-xs text-muted-foreground">para {t.destination}</div>
                 </TableCell>
                 <TableCell>
-                  <div className="text-sm text-foreground">{t.driverName || "Unassigned"}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{t.vehiclePlate || "No Vehicle"}</div>
+                  <div className="text-sm text-foreground">{t.driverName || "Não atribuído"}</div>
+                  <div className="text-xs text-muted-foreground font-mono">{t.vehiclePlate || "S/ Viatura"}</div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Calendar className="w-3 h-3 mr-1" />
-                    {format(new Date(t.scheduledStart), "MMM d, yyyy")}
+                    {format(new Date(t.scheduledStart), "dd MMM yyyy")}
                   </div>
                 </TableCell>
                 <TableCell>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${getStatusColor(t.status)}`}>
-                    {t.status.replace('_', ' ')}
+                    {t.status === 'in_progress' ? 'Em curso' : t.status === 'completed' ? 'Concluída' : t.status === 'cancelled' ? 'Cancelada' : 'Pendente'}
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
@@ -180,7 +180,7 @@ export default function AdminTrips() {
                     <Button variant="ghost" size="icon" onClick={() => openEdit(t)}>
                       <Edit className="w-4 h-4 text-blue-400" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => confirm("Delete?") && deleteMutation.mutate({ id: t.id })}>
+                    <Button variant="ghost" size="icon" onClick={() => confirm("Deseja mesmo eliminar esta viagem?") && deleteMutation.mutate({ id: t.id })}>
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>
                   </div>
@@ -193,40 +193,40 @@ export default function AdminTrips() {
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl bg-card">
-          <DialogHeader><DialogTitle>{editingTrip ? "Edit Trip" : "New Trip"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingTrip ? "Editar Viagem" : "Nova Viagem"}</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField control={form.control} name="title" render={({ field }) => (
-                <FormItem><FormLabel>Trip Title</FormLabel><FormControl><Input {...field} placeholder="e.g. Delivery to NY Hub" /></FormControl><FormMessage/></FormItem>
+                <FormItem><FormLabel>Título da Viagem</FormLabel><FormControl><Input {...field} placeholder="Ex: Entrega de Material no Lobito" /></FormControl><FormMessage/></FormItem>
               )}/>
               
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="origin" render={({ field }) => (
-                  <FormItem><FormLabel>Origin</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>
+                  <FormItem><FormLabel>Origem</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>
                 )}/>
                 <FormField control={form.control} name="destination" render={({ field }) => (
-                  <FormItem><FormLabel>Destination</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>
+                  <FormItem><FormLabel>Destino</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>
                 )}/>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="driverId" render={({ field }) => (
-                  <FormItem><FormLabel>Driver</FormLabel>
+                  <FormItem><FormLabel>Motorista</FormLabel>
                     <Select onValueChange={(v) => field.onChange(v ? parseInt(v) : null)} value={field.value?.toString() || ""}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecionar motorista" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="null">Unassigned</SelectItem>
+                        <SelectItem value="null">Não atribuído</SelectItem>
                         {drivers.map(d => <SelectItem key={d.id} value={d.id.toString()}>{d.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   <FormMessage/></FormItem>
                 )}/>
                 <FormField control={form.control} name="vehicleId" render={({ field }) => (
-                  <FormItem><FormLabel>Vehicle</FormLabel>
+                  <FormItem><FormLabel>Viatura</FormLabel>
                     <Select onValueChange={(v) => field.onChange(v ? parseInt(v) : null)} value={field.value?.toString() || ""}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select vehicle" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selecionar viatura" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="null">Unassigned</SelectItem>
+                        <SelectItem value="null">Não atribuída</SelectItem>
                         {vehicles?.filter(v => v.status === 'active').map(v => 
                           <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand}</SelectItem>
                         )}
@@ -238,18 +238,18 @@ export default function AdminTrips() {
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="scheduledStart" render={({ field }) => (
-                  <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl><FormMessage/></FormItem>
+                  <FormItem><FormLabel>Data de Início</FormLabel><FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl><FormMessage/></FormItem>
                 )}/>
                 {editingTrip && (
                   <FormField control={form.control} name="status" render={({ field }) => (
-                    <FormItem><FormLabel>Status</FormLabel>
+                    <FormItem><FormLabel>Estado</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="pending">Pendente</SelectItem>
+                          <SelectItem value="in_progress">Em curso</SelectItem>
+                          <SelectItem value="completed">Concluída</SelectItem>
+                          <SelectItem value="cancelled">Cancelada</SelectItem>
                         </SelectContent>
                       </Select>
                     <FormMessage/></FormItem>
@@ -258,8 +258,8 @@ export default function AdminTrips() {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="mr-2">Cancel</Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>Save</Button>
+                <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="mr-2">Cancelar</Button>
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>Guardar</Button>
               </div>
             </form>
           </Form>
