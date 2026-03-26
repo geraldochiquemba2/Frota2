@@ -1,0 +1,22 @@
+packages:
+  "framer-motion": "Animations and page transitions"
+  "recharts": "Dashboard analytics charts and data visualization"
+  "date-fns": "Date formatting and manipulation"
+  "react-hook-form": "Form state management"
+  "@hookform/resolvers": "Zod validation resolver for forms"
+  "zod": "Schema validation for forms"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility function to efficiently merge Tailwind CSS classes"
+
+images:
+  - path: "artifacts/fleet-manager/public/images/login-bg.png"
+    description: "Abstract 3D network lines glowing in dark blue and cyan over a very dark slate background, conveying enterprise logistics and global fleet connections, clean minimal tech style."
+    aspect_ratio: "16:9"
+  - path: "artifacts/fleet-manager/public/images/dashboard-hero.png"
+    description: "Subtle dark blue gradient mesh with faint glowing grid dots, very minimal, dark mode professional aesthetic for dashboard header."
+    aspect_ratio: "16:9"
+
+notes:
+  - Using generated hooks from @workspace/api-client-react
+  - Defaulting to a forced dark theme in CSS to match the "dark professional" requirement
+  - Auth uses /api/auth/me to check session
