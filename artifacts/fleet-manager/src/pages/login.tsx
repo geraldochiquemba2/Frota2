@@ -11,11 +11,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 
 const loginSchema = z.object({
-  phone: z.string().min(5, "Phone number is required"),
-  pin: z.string().min(4, "PIN is required").max(6),
+  phone: z.string().min(5, "Número inválido"),
+  pin: z.string().min(4, "PIN obrigatório").max(6),
 });
+
+function normalizePhone(raw: string): string {
+  let p = raw.replace(/\s+/g, "").replace(/-/g, "");
+  if (p.startsWith("00244")) p = "+" + p.slice(2);
+  if (p.startsWith("244") && !p.startsWith("+")) p = "+" + p;
+  if (/^9\d{8}$/.test(p)) p = "+244" + p;
+  return p;
+}
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -54,7 +63,7 @@ export default function Login() {
   });
 
   const onSubmit = (values: z.infer<typeof loginSchema>) => {
-    loginMutation.mutate({ data: values });
+    loginMutation.mutate({ data: { ...values, phone: normalizePhone(values.phone) } });
   };
 
   return (
@@ -130,6 +139,14 @@ export default function Login() {
             </Button>
           </form>
         </Form>
+        <div className="mt-6 text-center">
+          <Link href="/register">
+            <div className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+              Não tem conta?
+              <span className="text-primary font-medium">Criar conta</span>
+            </div>
+          </Link>
+        </div>
       </motion.div>
     </div>
   );

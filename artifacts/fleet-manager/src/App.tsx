@@ -8,6 +8,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { DriverLayout } from "@/components/layout/DriverLayout";
 
 import Login from "@/pages/login";
+import Register from "@/pages/register";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminVehicles from "@/pages/admin/vehicles";
 import AdminTrips from "@/pages/admin/trips";
@@ -51,6 +52,7 @@ function Router() {
     <Switch>
       <Route path="/" component={RootRedirect} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
 
       {/* Admin Routes */}
       <Route path="/admin/dashboard">{() => <ProtectedRoute component={AdminDashboard} allowedRole="admin" layout={AdminLayout} />}</Route>
