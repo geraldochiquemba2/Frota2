@@ -48,9 +48,13 @@ app.use("/api", router);
 // Serve frontend in production (Single Web Service deployment)
 app.use(express.static(path.join(process.cwd(), "artifacts/fleet-manager/dist")));
 
-// Fallback to React Router
-app.get("*", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "artifacts/fleet-manager/dist/index.html"));
+// Fallback to React Router (Express 5 compatible catch-all)
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.accepts('html')) {
+    res.sendFile(path.join(process.cwd(), "artifacts/fleet-manager/dist/index.html"));
+  } else {
+    next();
+  }
 });
 
 export default app;
