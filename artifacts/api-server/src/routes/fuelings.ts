@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { fuelingsTable, usersTable, vehiclesTable, financeRecordsTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAuth } from "../middlewares/rbac";
 
 const router: IRouter = Router();
 

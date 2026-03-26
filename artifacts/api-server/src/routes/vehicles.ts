@@ -2,13 +2,10 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { vehiclesTable, usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAuth } from "../middlewares/rbac";
 
 const router: IRouter = Router();
 
-function requireAuth(req: any, res: any, next: any) {
-  if (!(req.session as any)?.userId) { res.status(401).json({ error: "Não autenticado" }); return; }
-  next();
-}
 
 router.get("/", requireAuth, async (req, res) => {
   const vehicles = await db.select().from(vehiclesTable);

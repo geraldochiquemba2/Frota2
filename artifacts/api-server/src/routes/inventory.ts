@@ -2,13 +2,10 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { inventoryItemsTable, inventoryMovementsTable, suppliersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
+import { requireAuth } from "../middlewares/rbac";
 
 const router: IRouter = Router();
 
-function requireAuth(req: any, res: any, next: any) {
-  if (!(req.session as any)?.userId) { res.status(401).json({ error: "Não autenticado" }); return; }
-  next();
-}
 
 function formatItem(item: any, suppliers: any[]) {
   const supplier = item.supplierId ? suppliers.find(s => s.id === item.supplierId) : null;
