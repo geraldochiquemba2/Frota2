@@ -50,7 +50,7 @@ app.use(express.static(path.join(process.cwd(), "artifacts/fleet-manager/dist/pu
 
 // Fallback to React Router (Express 5 compatible catch-all)
 app.use((req, res, next) => {
-  if (req.method === 'GET' && req.accepts('html')) {
+  if ((req.method === 'GET' || req.method === 'HEAD') && req.accepts('html')) {
     res.sendFile(path.join(process.cwd(), "artifacts/fleet-manager/dist/public/index.html"));
   } else {
     next();
