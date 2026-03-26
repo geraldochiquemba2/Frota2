@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import path from "path";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import cookieParser from "cookie-parser";
@@ -43,5 +44,13 @@ app.use(session({
 }));
 
 app.use("/api", router);
+
+// Serve frontend in production (Single Web Service deployment)
+app.use(express.static(path.join(process.cwd(), "artifacts/fleet-manager/dist")));
+
+// Fallback to React Router
+app.get("*", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "artifacts/fleet-manager/dist/index.html"));
+});
 
 export default app;

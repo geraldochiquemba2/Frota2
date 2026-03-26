@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { useListMaintenance, useCreateMaintenance, useUpdateMaintenance, useDeleteMaintenance, useListVehicles, useListSuppliers, Maintenance } from "@workspace/api-client-react";
+import { useListMaintenance, useCreateMaintenance, useUpdateMaintenance, useDeleteMaintenance, useListVehicles, useListSuppliers, useListInventory, Maintenance } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,10 @@ const schema = z.object({
   mileage: z.coerce.number().optional().nullable(),
   supplierId: z.coerce.number().optional().nullable(),
   notes: z.string().optional().nullable(),
+  partsUsed: z.array(z.object({
+    inventoryItemId: z.coerce.number(),
+    quantity: z.coerce.number().min(0.01)
+  })).optional().default([]),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -41,6 +45,7 @@ export default function AdminMaintenance() {
   const { data: maintenance, isLoading } = useListMaintenance();
   const { data: vehicles } = useListVehicles();
   const { data: suppliers } = useListSuppliers();
+  const { data: inventory } = useListInventory();
   const createMutation = useCreateMaintenance();
   const updateMutation = useUpdateMaintenance();
   const deleteMutation = useDeleteMaintenance();
@@ -53,12 +58,17 @@ export default function AdminMaintenance() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { vehicleId: 0, type: "", description: "", date: new Date().toISOString().slice(0, 10), status: "scheduled", cost: null, mileage: null, supplierId: null, notes: "" },
+    defaultValues: { vehicleId: 0, type: "", description: "", date: new Date().toISOString().slice(0, 10), status: "scheduled", cost: null, mileage: null, supplierId: null, notes: "", partsUsed: [] },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "partsUsed"
   });
 
   function openCreate() {
     setEditItem(null);
-    form.reset({ vehicleId: 0, type: "", description: "", date: new Date().toISOString().slice(0, 10), status: "scheduled", cost: null, mileage: null, supplierId: null, notes: "" });
+    form.reset({ vehicleId: 0, type: "", description: "", date: new Date().toISOString().slice(0, 10), status: "scheduled", cost: null, mileage: null, supplierId: null, notes: "", partsUsed: [] });
     setIsDialogOpen(true);
   }
 
@@ -69,12 +79,29 @@ export default function AdminMaintenance() {
       date: item.date.slice(0, 10), status: item.status as any,
       cost: item.cost || null, mileage: item.mileage || null,
       supplierId: item.supplierId || null, notes: item.notes || "",
+      partsUsed: item.partsUsed || [],
     });
     setIsDialogOpen(true);
   }
 
   async function onSubmit(values: FormValues) {
-    const payload = { ...values, date: new Date(values.date).toISOString(), cost: values.cost || null, mileage: values.mileage || null, supplierId: values.supplierId || null, notes: values.notes || null, partsUsed: [] };
+    const payload = { 
+      ...values, 
+      date: new Date(values.date).toISOString(), 
+      cost: values.cost || null, 
+      mileage: values.mileage || null, 
+      supplierId: values.supplierId || null, 
+      notes: values.notes || null, 
+      partsUsed: values.partsUsed?.map(p => {
+        const item = inventory?.find(i => i.id === p.inventoryItemId);
+        return {
+          inventoryItemId: p.inventoryItemId,
+          quantity: p.quantity,
+          itemName: item?.name || "Desconhecido",
+          unitCost: item?.unitPrice || 0
+        };
+      }) || [] 
+    };
     if (editItem) {
       await updateMutation.mutateAsync({ id: editItem.id, data: payload });
       toast({ title: "Manutenção atualizada" });
@@ -202,7 +229,36 @@ export default function AdminMaintenance() {
               <FormField control={form.control} name="notes" render={({ field }) => (
                 <FormItem><FormLabel>Notas</FormLabel><FormControl><Input placeholder="Observações..." {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>
               )} />
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="space-y-3 pt-2 border-t mt-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-semibold">Peças / Consumíveis</h3>
+                  <Button type="button" variant="outline" size="sm" onClick={() => append({ inventoryItemId: 0, quantity: 1 })}>
+                    <Plus className="w-4 h-4 mr-2" /> Adicionar Peça
+                  </Button>
+                </div>
+                {fields.map((field, index) => (
+                  <div key={field.id} className="flex gap-4 items-end bg-muted/30 p-3 rounded-xl border border-border">
+                    <FormField control={form.control} name={`partsUsed.${index}.inventoryItemId`} render={({field: f}) => (
+                      <FormItem className="flex-1"><FormLabel>Peça</FormLabel>
+                        <Select onValueChange={(v) => f.onChange(Number(v))} value={f.value ? f.value.toString() : ""}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Selecionar"/></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {inventory?.filter(i => i.currentStock > 0).map(i => (
+                              <SelectItem key={i.id} value={i.id.toString()}>{i.name} ({i.currentStock} disp.)</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name={`partsUsed.${index}.quantity`} render={({field: f}) => (
+                      <FormItem className="w-24"><FormLabel>Qtd</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl></FormItem>
+                    )} />
+                    <Button type="button" variant="ghost" size="icon" className="text-destructive mb-2" onClick={() => remove(index)}><Trash2 className="w-4 h-4"/></Button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
                 <Button type="submit">Guardar</Button>
               </div>

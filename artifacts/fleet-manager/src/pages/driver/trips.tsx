@@ -7,7 +7,20 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { MapPin, Navigation, CheckCircle2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
+// Fix vector icon issues with React Leaflet
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
 export default function DriverTrips() {
   const { user } = useAuth();
   const { data: trips } = useListTrips();
@@ -110,6 +123,20 @@ export default function DriverTrips() {
                     </Button>
                   )}
                 </CardFooter>
+              )}
+              {isActive && (
+                <div className="h-64 w-full relative z-0 mt-4 rounded-b-xl overflow-hidden border-t">
+                  <MapContainer 
+                    center={[38.7223, -9.1393]} // Default to Lisbon center for demonstration
+                    zoom={12} 
+                    style={{ height: "100%", width: "100%" }}
+                  >
+                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+                    <Marker position={[38.7223, -9.1393]}>
+                      <Popup>Localização Atual</Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
               )}
             </Card>
           );

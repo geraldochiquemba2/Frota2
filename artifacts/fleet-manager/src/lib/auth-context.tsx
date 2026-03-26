@@ -14,6 +14,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading, error } = useGetMe({
+    // @ts-expect-error queryKey is provided internally by the generate hook
     query: {
       retry: false,
       refetchOnWindowFocus: false,
