@@ -93,7 +93,7 @@ router.get("/maintenance", requireAuth, async (req, res) => {
   res.json({ records, totalCost, byVehicle, byType });
 });
 
-router.get("/dashboard/stats", requireAuth, async (req, res) => {
+router.get("/stats", requireAuth, async (req, res) => {
   const userId = (req.session as any).userId;
   const vehicles = await db.select().from(vehiclesTable);
   const users = await db.select().from(usersTable);
