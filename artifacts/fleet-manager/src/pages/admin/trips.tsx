@@ -56,6 +56,7 @@ export default function AdminTrips() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
         setIsDialogOpen(false);
         toast({ title: "Viagem criada com sucesso" });
       }
@@ -66,6 +67,7 @@ export default function AdminTrips() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
         setIsDialogOpen(false);
         toast({ title: "Viagem atualizada" });
       }
@@ -76,6 +78,7 @@ export default function AdminTrips() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
         toast({ title: "Viagem eliminada" });
       }
     }

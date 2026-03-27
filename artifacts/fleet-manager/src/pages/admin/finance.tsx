@@ -41,6 +41,7 @@ export default function AdminFinance() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/finance"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
         setIsDialogOpen(false);
         toast({ title: "Registo adicionado" });
       }
@@ -51,6 +52,7 @@ export default function AdminFinance() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/finance"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
         toast({ title: "Registo eliminado" });
       }
     }

@@ -63,14 +63,17 @@ export default function AdminInventory() {
     const payload = { ...values, unitPrice: values.unitPrice || null, supplierId: values.supplierId || null, notes: values.notes || null };
     if (editItem) { await updateItem.mutateAsync({ id: editItem.id, data: payload }); toast({ title: "Item atualizado" }); }
     else { await createItem.mutateAsync({ data: payload }); toast({ title: "Item criado" }); }
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
     setIsItemDialog(false);
   }
 
   async function onMovementSubmit(values: z.infer<typeof movementSchema>) {
     await createMovement.mutateAsync({ data: { ...values, date: new Date(values.date).toISOString(), reason: values.reason || null, maintenanceId: null } });
     toast({ title: "Movimento registado" });
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/inventory/movements"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
     setIsMovementDialog(false);
   }
 
@@ -78,7 +81,8 @@ export default function AdminInventory() {
     if (deleteId == null) return;
     await deleteItem.mutateAsync({ id: deleteId });
     toast({ title: "Item eliminado" });
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
     setDeleteId(null);
   }
 

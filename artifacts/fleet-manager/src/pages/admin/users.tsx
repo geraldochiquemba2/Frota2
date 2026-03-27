@@ -55,7 +55,10 @@ export default function AdminUsers() {
       await createUser.mutateAsync({ data: { name: payload.name, phone: payload.phone, pin: payload.pin, role: payload.role, vehicleId: payload.vehicleId } });
       toast({ title: "Utilizador criado" });
     }
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     setIsDialogOpen(false);
   }
 
@@ -63,7 +66,9 @@ export default function AdminUsers() {
     if (deleteId == null) return;
     await deleteUser.mutateAsync({ id: deleteId });
     toast({ title: "Utilizador eliminado" });
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
     setDeleteId(null);
   }
 

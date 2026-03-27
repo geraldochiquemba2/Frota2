@@ -52,6 +52,8 @@ export default function AdminVehicles() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/users"] });
         setIsDialogOpen(false);
         toast({ title: "Viatura criada com sucesso" });
       }
@@ -62,6 +64,8 @@ export default function AdminVehicles() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/users"] });
         setIsDialogOpen(false);
         toast({ title: "Viatura atualizada" });
       }
@@ -72,6 +76,8 @@ export default function AdminVehicles() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/users"] });
         toast({ title: "Viatura eliminada" });
       }
     }

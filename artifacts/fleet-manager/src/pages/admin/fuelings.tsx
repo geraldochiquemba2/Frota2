@@ -77,7 +77,8 @@ export default function AdminFuelings() {
       await createMutation.mutateAsync({ data: payload });
       toast({ title: "Abastecimento registado" });
     }
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["/api/fuelings"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
     setIsDialogOpen(false);
   }
 
@@ -85,7 +86,8 @@ export default function AdminFuelings() {
     if (deleteId == null) return;
     await deleteMutation.mutateAsync({ id: deleteId });
     toast({ title: "Abastecimento eliminado" });
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["/api/fuelings"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
     setDeleteId(null);
   }
 

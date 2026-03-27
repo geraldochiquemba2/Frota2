@@ -109,7 +109,9 @@ export default function AdminMaintenance() {
       await createMutation.mutateAsync({ data: payload });
       toast({ title: "Manutenção criada" });
     }
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["/api/maintenance"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
     setIsDialogOpen(false);
   }
 
@@ -117,7 +119,9 @@ export default function AdminMaintenance() {
     if (deleteId == null) return;
     await deleteMutation.mutateAsync({ id: deleteId });
     toast({ title: "Manutenção eliminada" });
-    queryClient.invalidateQueries();
+    queryClient.invalidateQueries({ queryKey: ["/api/maintenance"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
     setDeleteId(null);
   }
 
