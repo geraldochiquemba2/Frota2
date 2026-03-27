@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { TripRouteMap } from "@/components/TripRouteMap";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
@@ -39,6 +40,7 @@ export default function DriverTrips() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [startingTrip, setStartingTrip] = useState<Trip | null>(null);
   const [endingTrip, setEndingTrip] = useState<Trip | null>(null);
+  const [cancellingTrip, setCancellingTrip] = useState<Trip | null>(null);
 
   const createForm = useForm<z.infer<typeof createTripSchema>>({
     resolver: zodResolver(createTripSchema),
@@ -114,6 +116,16 @@ export default function DriverTrips() {
     });
   };
 
+  const onCancelTrip = () => {
+    if (!cancellingTrip) return;
+    updateMutation.mutate({ 
+      id: cancellingTrip.id, 
+      data: { status: "cancelled" } as any
+    }, {
+      onSuccess: () => setCancellingTrip(null)
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
@@ -174,12 +186,21 @@ export default function DriverTrips() {
               {(isPending || isActive) && (
                 <CardFooter className="bg-muted/20 p-4 flex gap-3">
                   {isPending && (
-                    <Button 
-                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
-                      onClick={() => setStartingTrip(trip)}
-                    >
-                      <Navigation className="w-4 h-4 mr-2" /> Iniciar Viagem
-                    </Button>
+                    <div className="flex w-full gap-2">
+                      <Button 
+                        variant="outline"
+                        className="flex-1 border-destructive text-destructive hover:bg-destructive/10" 
+                        onClick={() => setCancellingTrip(trip)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" 
+                        onClick={() => setStartingTrip(trip)}
+                      >
+                        <Navigation className="w-4 h-4 mr-2" /> Iniciar
+                      </Button>
+                    </div>
                   )}
                   {isActive && (
                     <Button 
@@ -279,6 +300,24 @@ export default function DriverTrips() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* CANCEL TRIP ALERT */}
+      <AlertDialog open={!!cancellingTrip} onOpenChange={() => setCancellingTrip(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar Viagem?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem a certeza que pretende cancelar esta viagem? Esta ação não pode ser revertida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não, manter</AlertDialogCancel>
+            <AlertDialogAction onClick={onCancelTrip} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sim, Cancelar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
