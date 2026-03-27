@@ -15,6 +15,8 @@ export const tripsTable = pgTable("trips", {
   driverId: integer("driver_id"),
   vehicleId: integer("vehicle_id"),
   notes: text("notes"),
+  startMileage: real("start_mileage"),
+  endMileage: real("end_mileage"),
   distance: real("distance"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

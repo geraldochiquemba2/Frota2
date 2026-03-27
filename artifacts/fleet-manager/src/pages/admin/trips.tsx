@@ -25,6 +25,7 @@ L.Icon.Default.mergeOptions({
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { TripRouteLayer } from "@/components/TripRouteMap";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -166,13 +167,7 @@ export default function AdminTrips() {
         >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
           {trips?.filter(t => t.status === 'in_progress').map(t => (
-            <Marker key={t.id} position={[-8.8368 + (Math.random() - 0.5) * 2, 13.2343 + (Math.random() - 0.5) * 2]}>
-              <Popup>
-                <div className="font-bold">{t.title}</div>
-                <div className="text-xs">{t.vehiclePlate} - {t.destination}</div>
-                <div className="mt-1 text-primary">Em Curso</div>
-              </Popup>
-            </Marker>
+            <TripRouteLayer key={t.id} origin={t.origin} destination={t.destination} title={t.title} />
           ))}
         </MapContainer>
         <div className="absolute top-4 right-4 z-10 bg-card/80 backdrop-blur p-2 rounded-lg border border-border text-xs font-semibold flex items-center gap-2">

@@ -20,4 +20,6 @@ export interface UpdateTripRequest {
   vehicleId?: number | null;
   notes?: string | null;
   distance?: number | null;
+  startMileage?: number | null;
+  endMileage?: number | null;
 }

@@ -18,7 +18,7 @@ function formatTrip(t: any, users: any[], vehicles: any[]) {
     actualEnd: t.actualEnd?.toISOString() || null,
     status: t.status, driverId: t.driverId, driverName: driver?.name || null,
     vehicleId: t.vehicleId, vehiclePlate: vehicle?.plate || null,
-    notes: t.notes, distance: t.distance, createdAt: t.createdAt.toISOString(),
+    notes: t.notes, distance: t.distance, startMileage: t.startMileage, endMileage: t.endMileage, createdAt: t.createdAt.toISOString(),
   };
 }
 
@@ -38,13 +38,19 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.post("/", requireAuth, async (req, res) => {
   const { title, origin, destination, scheduledStart, scheduledEnd, driverId, vehicleId, notes, distance } = req.body;
+  const userId = (req.session as any).userId;
+  const users = await db.select().from(usersTable);
+  const currentUser = users.find(u => u.id === userId);
+
+  const finalDriverId = currentUser?.role === "admin" ? (driverId || null) : userId;
+  const finalVehicleId = currentUser?.role === "admin" ? (vehicleId || null) : (currentUser?.vehicleId || null);
+
   const [t] = await db.insert(tripsTable).values({
     title, origin, destination,
     scheduledStart: new Date(scheduledStart),
     scheduledEnd: scheduledEnd ? new Date(scheduledEnd) : null,
-    status: "pending", driverId: driverId || null, vehicleId: vehicleId || null, notes: notes || null, distance: distance || null,
+    status: "pending", driverId: finalDriverId, vehicleId: finalVehicleId, notes: notes || null, distance: distance || null,
   }).returning();
-  const users = await db.select().from(usersTable);
   const vehicles = await db.select().from(vehiclesTable);
   res.status(201).json(formatTrip(t, users, vehicles));
 });
@@ -71,7 +77,7 @@ router.put("/:id", requireAuth, async (req, res) => {
     return;
   }
 
-  const { title, origin, destination, scheduledStart, scheduledEnd, actualStart, actualEnd, status, driverId, vehicleId, notes, distance } = req.body;
+  const { title, origin, destination, scheduledStart, scheduledEnd, actualStart, actualEnd, status, driverId, vehicleId, notes, distance, startMileage, endMileage } = req.body;
   
   // Security check: Drivers cannot change driverId or vehicleId or Title/Origin/Dest
   const updateData: any = {};
@@ -91,6 +97,23 @@ router.put("/:id", requireAuth, async (req, res) => {
   if (actualEnd !== undefined) updateData.actualEnd = actualEnd ? new Date(actualEnd) : null;
   if (status !== undefined) updateData.status = status;
   if (notes !== undefined) updateData.notes = notes;
+  
+  if (startMileage !== undefined) {
+    updateData.startMileage = startMileage;
+    if (t_check.vehicleId) {
+      await db.update(vehiclesTable).set({ mileage: startMileage }).where(eq(vehiclesTable.id, t_check.vehicleId));
+    }
+  }
+
+  if (endMileage !== undefined) {
+    updateData.endMileage = endMileage;
+    if (t_check.startMileage !== null && t_check.startMileage !== undefined) {
+      updateData.distance = endMileage - t_check.startMileage;
+    }
+    if (t_check.vehicleId) {
+      await db.update(vehiclesTable).set({ mileage: endMileage }).where(eq(vehiclesTable.id, t_check.vehicleId));
+    }
+  }
 
   const [t] = await db.update(tripsTable).set(updateData).where(eq(tripsTable.id, Number(req.params.id))).returning();
   const vehicles = await db.select().from(vehiclesTable);

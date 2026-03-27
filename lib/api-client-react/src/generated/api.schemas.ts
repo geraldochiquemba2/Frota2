@@ -164,6 +164,8 @@ export interface Trip {
   vehiclePlate?: string | null;
   notes?: string | null;
   distance?: number | null;
+  startMileage?: number | null;
+  endMileage?: number | null;
   createdAt: string;
 }
 
@@ -177,6 +179,8 @@ export interface CreateTripRequest {
   vehicleId?: number | null;
   notes?: string | null;
   distance?: number | null;
+  startMileage?: number | null;
+  endMileage?: number | null;
 }
 
 export type UpdateTripRequestStatus =
@@ -202,6 +206,8 @@ export interface UpdateTripRequest {
   vehicleId?: number | null;
   notes?: string | null;
   distance?: number | null;
+  startMileage?: number | null;
+  endMileage?: number | null;
 }
 
 export interface Fueling {

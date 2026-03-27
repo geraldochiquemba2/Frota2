@@ -1154,6 +1154,12 @@ components:
         distance:
           type: number
           nullable: true
+        startMileage:
+          type: number
+          nullable: true
+        endMileage:
+          type: number
+          nullable: true
         createdAt:
           type: string
       required: [id, title, origin, destination, scheduledStart, status, createdAt]
@@ -1182,6 +1188,12 @@ components:
           type: string
           nullable: true
         distance:
+          type: number
+          nullable: true
+        startMileage:
+          type: number
+          nullable: true
+        endMileage:
           type: number
           nullable: true
       required: [title, origin, destination, scheduledStart]
@@ -1219,6 +1231,12 @@ components:
           type: string
           nullable: true
         distance:
+          type: number
+          nullable: true
+        startMileage:
+          type: number
+          nullable: true
+        endMileage:
           type: number
           nullable: true
 

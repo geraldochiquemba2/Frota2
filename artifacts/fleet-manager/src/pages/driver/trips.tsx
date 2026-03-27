@@ -1,67 +1,133 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useListTrips, useUpdateTrip, Trip } from "@workspace/api-client-react";
+import { useListTrips, useUpdateTrip, useCreateTrip, Trip } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { MapPin, Navigation, CheckCircle2, ChevronDown } from "lucide-react";
+import { Navigation, CheckCircle2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { TripRouteMap } from "@/components/TripRouteMap";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
-// Fix vector icon issues with React Leaflet
-import L from "leaflet";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
+const createTripSchema = z.object({
+  title: z.string().min(1, "Título obrigatório"),
+  origin: z.string().min(1, "Origem obrigatória"),
+  destination: z.string().min(1, "Destino obrigatório"),
+  scheduledStart: z.string().min(1, "Data obrigatória"),
 });
+
+const startTripSchema = z.object({
+  startMileage: z.coerce.number().min(0, "Kilometragem inválida"),
+});
+
+const endTripSchema = z.object({
+  endMileage: z.coerce.number().min(0, "Kilometragem inválida"),
+});
+
 export default function DriverTrips() {
   const { user } = useAuth();
   const { data: trips } = useListTrips();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [startingTrip, setStartingTrip] = useState<Trip | null>(null);
+  const [endingTrip, setEndingTrip] = useState<Trip | null>(null);
+
+  const createForm = useForm<z.infer<typeof createTripSchema>>({
+    resolver: zodResolver(createTripSchema),
+    defaultValues: { title: "", origin: "", destination: "", scheduledStart: new Date().toISOString().split('T')[0] }
+  });
+
+  const startForm = useForm<z.infer<typeof startTripSchema>>({ resolver: zodResolver(startTripSchema) });
+  const endForm = useForm<z.infer<typeof endTripSchema>>({ resolver: zodResolver(endTripSchema) });
+
+  const createMutation = useCreateTrip({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
+        setIsCreateOpen(false);
+        toast({ title: "Viagem criada com sucesso" });
+      }
+    }
+  });
+
   const updateMutation = useUpdateTrip({
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
-        toast({ title: "Estado da viagem atualizado" });
+        setStartingTrip(null);
+        setEndingTrip(null);
+        toast({ title: "Viagem atualizada" });
       }
     }
   });
 
   const myTrips = trips?.filter(t => t.driverId === user?.id).sort((a,b) => {
-    // Sort: Active first, then pending, then completed
     const order: Record<string, number> = { "in_progress": 0, "pending": 1, "completed": 2, "cancelled": 3 };
     return (order[a.status] ?? 4) - (order[b.status] ?? 4);
   }) || [];
 
-  const handleStatusChange = (trip: Trip, newStatus: any) => {
+  const onCreateSubmit = (values: z.infer<typeof createTripSchema>) => {
+    createMutation.mutate({ 
+      data: {
+        ...values,
+        scheduledStart: new Date(values.scheduledStart).toISOString(),
+        driverId: user?.id,
+        vehicleId: user?.vehicleId,
+        status: "pending"
+      } as any
+    });
+  };
+
+  const onStartSubmit = (values: z.infer<typeof startTripSchema>) => {
+    if (!startingTrip) return;
     updateMutation.mutate({ 
-      id: trip.id, 
+      id: startingTrip.id, 
       data: { 
-        status: newStatus,
-        actualStart: newStatus === "in_progress" && !trip.actualStart ? new Date().toISOString() : trip.actualStart,
-        actualEnd: newStatus === "completed" ? new Date().toISOString() : trip.actualEnd
-      } 
+        status: "in_progress",
+        actualStart: new Date().toISOString(),
+        startMileage: values.startMileage
+      } as any
+    });
+  };
+
+  const onEndSubmit = (values: z.infer<typeof endTripSchema>) => {
+    if (!endingTrip) return;
+    if (endingTrip.startMileage && values.endMileage < endingTrip.startMileage) {
+      endForm.setError("endMileage", { message: "Deve ser superior à kilometragem inicial" });
+      return;
+    }
+    updateMutation.mutate({ 
+      id: endingTrip.id, 
+      data: { 
+        status: "completed",
+        actualEnd: new Date().toISOString(),
+        endMileage: values.endMileage
+      } as any
     });
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-display font-bold">As Minhas Viagens</h1>
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <h1 className="text-2xl font-display font-bold">As Minhas Viagens</h1>
+        <Button onClick={() => setIsCreateOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" /> Criar Viagem
+        </Button>
+      </div>
 
       <div className="space-y-4">
         {myTrips.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-12 text-muted-foreground border rounded-2xl border-dashed">
             <Navigation className="w-12 h-12 mx-auto mb-4 opacity-20" />
-            <p>Não tem viagens atribuídas.</p>
+            <p>Nenhuma viagem na sua lista.</p>
           </div>
         )}
 
@@ -96,9 +162,12 @@ export default function DriverTrips() {
                   </div>
                 </div>
 
-                <div className="mt-4 text-sm text-muted-foreground flex gap-4">
+                <div className="mt-4 text-sm text-muted-foreground flex flex-wrap gap-4">
                   <div><span className="font-medium text-foreground">Agendado:</span> {format(new Date(trip.scheduledStart), "dd MMM, HH:mm")}</div>
                   {trip.vehiclePlate && <div><span className="font-medium text-foreground">Viatura:</span> {trip.vehiclePlate}</div>}
+                  {trip.distance !== null && trip.distance !== undefined && (
+                    <div className="text-primary font-bold">Percorrido: {trip.distance} km</div>
+                  )}
                 </div>
               </CardContent>
               
@@ -107,8 +176,7 @@ export default function DriverTrips() {
                   {isPending && (
                     <Button 
                       className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
-                      onClick={() => handleStatusChange(trip, "in_progress")}
-                      disabled={updateMutation.isPending}
+                      onClick={() => setStartingTrip(trip)}
                     >
                       <Navigation className="w-4 h-4 mr-2" /> Iniciar Viagem
                     </Button>
@@ -116,32 +184,101 @@ export default function DriverTrips() {
                   {isActive && (
                     <Button 
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
-                      onClick={() => handleStatusChange(trip, "completed")}
-                      disabled={updateMutation.isPending}
+                      onClick={() => setEndingTrip(trip)}
                     >
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> Marcar Concluída
+                      <CheckCircle2 className="w-4 h-4 mr-2" /> Finalizar Viagem
                     </Button>
                   )}
                 </CardFooter>
               )}
-              {isActive && (
-                <div className="h-64 w-full relative z-0 mt-4 rounded-b-xl overflow-hidden border-t">
-                  <MapContainer 
-                    center={[-8.8368, 13.2343]} // Centrado em Luanda, Angola
-                    zoom={12} 
-                    style={{ height: "100%", width: "100%" }}
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-                    <Marker position={[-8.8368, 13.2343]}>
-                      <Popup>Localização Atual</Popup>
-                    </Marker>
-                  </MapContainer>
+              {(isActive || isDone) && (
+                <div className="border-t rounded-b-xl overflow-hidden">
+                  <TripRouteMap origin={trip.origin} destination={trip.destination} title={trip.title} />
                 </div>
               )}
             </Card>
           );
         })}
       </div>
+
+      {/* CREATE MODAL */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-md bg-card">
+          <DialogHeader><DialogTitle>Criar Nova Viagem</DialogTitle></DialogHeader>
+          <Form {...createForm}>
+            <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
+              <FormField control={createForm.control} name="title" render={({ field }) => (
+                <FormItem><FormLabel>Título</FormLabel><FormControl><Input {...field} placeholder="Ex: Rota Luanda-Benguela" /></FormControl><FormMessage/></FormItem>
+              )}/>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={createForm.control} name="origin" render={({ field }) => (
+                  <FormItem><FormLabel>Origem</FormLabel><FormControl><Input {...field} placeholder="Cidade/Local" /></FormControl><FormMessage/></FormItem>
+                )}/>
+                <FormField control={createForm.control} name="destination" render={({ field }) => (
+                  <FormItem><FormLabel>Destino</FormLabel><FormControl><Input {...field} placeholder="Cidade/Local" /></FormControl><FormMessage/></FormItem>
+                )}/>
+              </div>
+              <FormField control={createForm.control} name="scheduledStart" render={({ field }) => (
+                <FormItem><FormLabel>Data Prevista</FormLabel><FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl><FormMessage/></FormItem>
+              )}/>
+              <div className="flex justify-end pt-4">
+                <Button type="submit" disabled={createMutation.isPending}>Guardar Viagem</Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* START TRIP MODAL */}
+      <Dialog open={!!startingTrip} onOpenChange={() => setStartingTrip(null)}>
+        <DialogContent className="max-w-md bg-card">
+          <DialogHeader><DialogTitle>Iniciar Viagem</DialogTitle></DialogHeader>
+          <Form {...startForm}>
+            <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Por favor, insira a kilometragem atual do conta-quilómetros da viatura {startingTrip?.vehiclePlate} antes de arrancar.
+              </p>
+              <FormField control={startForm.control} name="startMileage" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kilometragem Inicial (km)</FormLabel>
+                  <FormControl><Input type="number" step="0.1" {...field} /></FormControl>
+                  <FormMessage/>
+                </FormItem>
+              )}/>
+              <div className="flex justify-end pt-4">
+                <Button type="button" variant="ghost" onClick={() => setStartingTrip(null)} className="mr-2">Cancelar</Button>
+                <Button type="submit" disabled={updateMutation.isPending}>Registar e Iniciar</Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* END TRIP MODAL */}
+      <Dialog open={!!endingTrip} onOpenChange={() => setEndingTrip(null)}>
+        <DialogContent className="max-w-md bg-card">
+          <DialogHeader><DialogTitle>Finalizar Viagem</DialogTitle></DialogHeader>
+          <Form {...endForm}>
+            <form onSubmit={endForm.handleSubmit(onEndSubmit)} className="space-y-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Chegou ao destino! Insira a kilometragem final da viatura para calcularmos a distância percorrida.
+                <br/><strong className="text-foreground">Iniciou com:</strong> {endingTrip?.startMileage} km
+              </p>
+              <FormField control={endForm.control} name="endMileage" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kilometragem Final (km)</FormLabel>
+                  <FormControl><Input type="number" step="0.1" {...field} /></FormControl>
+                  <FormMessage/>
+                </FormItem>
+              )}/>
+              <div className="flex justify-end pt-4">
+                <Button type="button" variant="ghost" onClick={() => setEndingTrip(null)} className="mr-2">Cancelar</Button>
+                <Button type="submit" disabled={updateMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700">Completar Viagem</Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

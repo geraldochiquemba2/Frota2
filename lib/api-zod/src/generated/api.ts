@@ -249,6 +249,8 @@ export const ListTripsResponseItem = zod.object({
   vehiclePlate: zod.string().nullish(),
   notes: zod.string().nullish(),
   distance: zod.number().nullish(),
+  startMileage: zod.number().nullish(),
+  endMileage: zod.number().nullish(),
   createdAt: zod.string(),
 });
 export const ListTripsResponse = zod.array(ListTripsResponseItem);
@@ -266,6 +268,8 @@ export const CreateTripBody = zod.object({
   vehicleId: zod.number().nullish(),
   notes: zod.string().nullish(),
   distance: zod.number().nullish(),
+  startMileage: zod.number().nullish(),
+  endMileage: zod.number().nullish(),
 });
 
 /**
@@ -291,6 +295,8 @@ export const GetTripResponse = zod.object({
   vehiclePlate: zod.string().nullish(),
   notes: zod.string().nullish(),
   distance: zod.number().nullish(),
+  startMileage: zod.number().nullish(),
+  endMileage: zod.number().nullish(),
   createdAt: zod.string(),
 });
 
@@ -316,6 +322,8 @@ export const UpdateTripBody = zod.object({
   vehicleId: zod.number().nullish(),
   notes: zod.string().nullish(),
   distance: zod.number().nullish(),
+  startMileage: zod.number().nullish(),
+  endMileage: zod.number().nullish(),
 });
 
 export const UpdateTripResponse = zod.object({
@@ -334,6 +342,8 @@ export const UpdateTripResponse = zod.object({
   vehiclePlate: zod.string().nullish(),
   notes: zod.string().nullish(),
   distance: zod.number().nullish(),
+  startMileage: zod.number().nullish(),
+  endMileage: zod.number().nullish(),
   createdAt: zod.string(),
 });
 
