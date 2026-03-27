@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth-context";
-import { Map, Truck, LogOut } from "lucide-react";
+import { Map, Truck, LogOut, Home } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function DriverLayout({ children }: { children: React.ReactNode }) {
@@ -9,8 +9,9 @@ export function DriverLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
 
   const navItems = [
-    { href: "/driver/dashboard", label: "As Minhas Viagens", icon: Map },
-    { href: "/driver/vehicle", label: "A Minha Viatura", icon: Truck },
+    { href: "/driver/dashboard", label: "Início", icon: Home },
+    { href: "/driver/trips", label: "Viagens", icon: Map },
+    { href: "/driver/vehicle", label: "Viatura", icon: Truck },
   ];
 
   return (
