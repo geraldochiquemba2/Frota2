@@ -22,7 +22,7 @@ router.use(requireAuth);
 
 // Admin-only routes
 router.use("/users", requireAdmin, usersRouter);
-router.use("/vehicles", requireAdmin, vehiclesRouter);
+router.use("/vehicles", vehiclesRouter);
 router.use("/fuelings", requireAdmin, fuelingsRouter);
 router.use("/maintenance", requireAdmin, maintenanceRouter);
 router.use("/inventory", requireAdmin, inventoryRouter);

@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { vehiclesTable, usersTable } from "@workspace/db/schema";
 import { eq, and, not } from "drizzle-orm";
-import { requireAuth } from "../middlewares/rbac";
+import { requireAuth, requireAdmin } from "../middlewares/rbac";
 
 const router: IRouter = Router();
 
@@ -21,7 +21,7 @@ router.get("/", requireAuth, async (req, res) => {
   }));
 });
 
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, requireAdmin, async (req, res) => {
   const { plate, brand, model, year, status, mileage, fuelType, assignedDriverId } = req.body;
   
   const [v] = await db.insert(vehiclesTable).values({ 
@@ -57,7 +57,7 @@ router.get("/:id", requireAuth, async (req, res) => {
   });
 });
 
-router.put("/:id", requireAuth, async (req, res) => {
+router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
   const vehicleId = Number(req.params.id);
   const { plate, brand, model, year, status, mileage, fuelType, assignedDriverId } = req.body;
   
@@ -106,7 +106,7 @@ router.put("/:id", requireAuth, async (req, res) => {
   });
 });
 
-router.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
   const vehicleId = Number(req.params.id);
   // Clear driver link
   await db.update(usersTable).set({ vehicleId: null }).where(eq(usersTable.vehicleId, vehicleId));
