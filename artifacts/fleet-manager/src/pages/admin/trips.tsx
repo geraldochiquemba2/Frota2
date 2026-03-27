@@ -5,8 +5,22 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, Search, Filter, MapPin, Navigation, Map as MapIcon } from "lucide-react";
 import { format } from "date-fns";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+// Fix vector icon issues
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -135,12 +149,36 @@ export default function AdminTrips() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-display font-bold">Viagens e Agendamentos</h1>
-          <p className="text-muted-foreground">Gerir planeamentos e rotas das viaturas</p>
+          <h1 className="text-2xl font-display font-bold">Gestão de Viagens</h1>
+          <p className="text-muted-foreground">Planear e acompanhar rotas das viaturas em Angola</p>
         </div>
-        <Button onClick={openCreate} className="shadow-lg">
+        <Button onClick={() => { form.reset(); setEditingTrip(null); setIsDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" /> Nova Viagem
         </Button>
+      </div>
+
+      {/* Angola Fleet Map */}
+      <div className="rounded-2xl border border-border shadow-sm overflow-hidden h-72 relative z-0">
+        <MapContainer 
+          center={[-8.8368, 13.2343]} 
+          zoom={6} 
+          style={{ height: "100%", width: "100%" }}
+        >
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+          {trips?.filter(t => t.status === 'in_progress').map(t => (
+            <Marker key={t.id} position={[-8.8368 + (Math.random() - 0.5) * 2, 13.2343 + (Math.random() - 0.5) * 2]}>
+              <Popup>
+                <div className="font-bold">{t.title}</div>
+                <div className="text-xs">{t.vehiclePlate} - {t.destination}</div>
+                <div className="mt-1 text-primary">Em Curso</div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+        <div className="absolute top-4 right-4 z-10 bg-card/80 backdrop-blur p-2 rounded-lg border border-border text-xs font-semibold flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          Mapa de Operações Angola
+        </div>
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">

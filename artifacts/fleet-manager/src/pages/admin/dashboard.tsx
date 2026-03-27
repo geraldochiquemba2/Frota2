@@ -3,6 +3,20 @@ import { useGetDashboardStats } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, Map, AlertCircle, TrendingUp, Users, Droplets, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+// Fix vector icon issues
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
 
 export default function AdminDashboard() {
   const { data: stats, isLoading } = useGetDashboardStats();
@@ -32,17 +46,32 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8 pb-8">
-      {/* Hero Section */}
-      <div className="relative rounded-3xl overflow-hidden h-48 sm:h-56 bg-card border border-border shadow-xl">
-        <img 
-          src={`${import.meta.env.BASE_URL}images/dashboard-hero.png`} 
-          alt="Dashboard Hero" 
-          className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-screen"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
-        <div className="relative z-10 h-full flex flex-col justify-center px-8 sm:px-12">
-          <h1 className="text-3xl sm:text-4xl font-display font-bold text-white mb-2">Visão Geral da Frota</h1>
-          <p className="text-muted-foreground max-w-xl">Telemetria e métricas operacionais em tempo real de toda a sua rede.</p>
+      {/* Live Angola Map Hero */}
+      <div className="relative rounded-3xl overflow-hidden h-64 sm:h-80 bg-card border border-border shadow-xl z-0">
+        <MapContainer 
+          center={[-8.8368, 13.2343]} 
+          zoom={6} 
+          style={{ height: "100%", width: "100%", filter: "grayscale(0.5) contrast(1.2) brightness(0.8)" }}
+          scrollWheelZoom={false}
+        >
+          <TileLayer 
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+            attribution="&copy; OpenStreetMap"
+          />
+          <Marker position={[-8.8368, 13.2343]}>
+            <Popup>Centro de Operações - Luanda</Popup>
+          </Marker>
+          <Marker position={[-12.5763, 13.4055]}>
+            <Popup>Benguela Hub</Popup>
+          </Marker>
+          <Marker position={[-14.9172, 13.4925]}>
+            <Popup>Lubango Logistics</Popup>
+          </Marker>
+        </MapContainer>
+        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute bottom-6 left-8 z-10 pointer-events-none">
+          <h1 className="text-3xl sm:text-4xl font-display font-bold text-white mb-2 drop-shadow-lg">Operações Angola</h1>
+          <p className="text-white/80 max-w-xl font-medium drop-shadow">Monitorização em tempo real da rede logística nacional.</p>
         </div>
       </div>
 
