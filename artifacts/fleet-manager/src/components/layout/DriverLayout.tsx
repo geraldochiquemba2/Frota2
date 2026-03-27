@@ -45,7 +45,7 @@ export function DriverLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Mobile logout */}
-        <button onClick={logout} className="md:hidden text-muted-foreground hover:text-white p-2">
+        <button onClick={logout} className="md:hidden text-muted-foreground hover:text-primary p-2">
           <LogOut className="w-5 h-5" />
         </button>
       </header>

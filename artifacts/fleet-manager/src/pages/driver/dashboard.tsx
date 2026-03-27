@@ -11,7 +11,7 @@ export default function DriverDashboard() {
   const { data: trips } = useListTrips();
   const { data: vehicles } = useListVehicles();
 
-  const assignedVehicle = vehicles?.find(v => v.id === user?.vehicleId);
+  const assignedVehicle = vehicles?.find(v => v.assignedDriverId === user?.id);
   const myTrips = trips?.filter(t => t.driverId === user?.id) || [];
   
   const activeTrip = myTrips.find(t => t.status === "in_progress");

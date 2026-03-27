@@ -66,7 +66,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+      <div className="absolute inset-0 z-0 opacity-10 pointer-events-none">
         <img
           src={`${import.meta.env.BASE_URL}images/login-bg.png`}
           alt=""
@@ -79,7 +79,7 @@ export default function Register() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md p-8 bg-card/80 backdrop-blur-xl border border-border/50 rounded-3xl shadow-2xl shadow-black/50"
+        className="relative z-10 w-full max-w-md p-8 bg-card/90 backdrop-blur-xl border border-border/50 rounded-3xl shadow-xl shadow-primary/5"
       >
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-400 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 mb-4">

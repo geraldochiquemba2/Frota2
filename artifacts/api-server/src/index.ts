@@ -43,17 +43,24 @@ async function ensureAdminExists() {
 
 function setupKeepAlive() {
   const url = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL;
-  if (!url) return;
+  if (!url) {
+    logger.warn("Keep-alive skipped: RENDER_EXTERNAL_URL not set.");
+    return;
+  }
   
-  // Render Free Tier sleeps after 15 mins of inactivity. 
-  // Ping ourselves every 14 minutes.
+  // Render Free Tier sleeps after 15 mins of inactivity.
+  // We'll ping ourselves every 5 minutes with a cache-buster.
   setInterval(() => {
-    fetch(url)
-      .then(res => logger.info(`Keep-alive ping to ${url}: ${res.status}`))
-      .catch(err => logger.error({ err }, "Keep-alive ping failed"));
-  }, 14 * 60 * 1000);
+    const pingUrl = `${url.replace(/\/$/, "")}/api/healthz?cb=${Date.now()}`;
+    fetch(pingUrl)
+      .then(res => {
+        if (res.status === 200) logger.info(`Keep-alive success: ${res.status}`);
+        else logger.warn(`Keep-alive unexpected status: ${res.status}`);
+      })
+      .catch(err => logger.error({ err }, "Keep-alive request failed"));
+  }, 5 * 60 * 1000); 
   
-  logger.info(`Keep-alive configured for ${url}`);
+  logger.info(`Keep-alive aggressive mode (5m) configured for ${url}`);
 }
 
 ensureAdminExists().then(() => {

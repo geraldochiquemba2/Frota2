@@ -51,22 +51,13 @@ export default function AdminDashboard() {
         <MapContainer 
           center={[-8.8368, 13.2343]} 
           zoom={6} 
-          style={{ height: "100%", width: "100%", filter: "grayscale(0.5) contrast(1.2) brightness(0.8)" }}
-          scrollWheelZoom={false}
+          style={{ height: "100%", width: "100%", filter: "contrast(1.2) brightness(0.9)" }}
+          scrollWheelZoom={true}
         >
           <TileLayer 
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
             attribution="&copy; OpenStreetMap"
           />
-          <Marker position={[-8.8368, 13.2343]}>
-            <Popup>Centro de Operações - Luanda</Popup>
-          </Marker>
-          <Marker position={[-12.5763, 13.4055]}>
-            <Popup>Benguela Hub</Popup>
-          </Marker>
-          <Marker position={[-14.9172, 13.4925]}>
-            <Popup>Lubango Logistics</Popup>
-          </Marker>
         </MapContainer>
         <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent pointer-events-none" />
         <div className="absolute bottom-6 left-8 z-10 pointer-events-none">
