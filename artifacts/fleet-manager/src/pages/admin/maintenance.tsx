@@ -34,7 +34,9 @@ const schema = z.object({
   supplierId: z.coerce.number().optional().nullable(),
   notes: z.string().optional().nullable(),
   partsUsed: z.array(z.object({
-    inventoryItemId: z.coerce.number(),
+    inventoryItemId: z.coerce.number().default(0),
+    itemName: z.string().optional(),
+    unitCost: z.coerce.number().optional(),
     quantity: z.coerce.number().min(0.01)
   })).optional().default([]),
 });
@@ -93,12 +95,20 @@ export default function AdminMaintenance() {
       supplierId: values.supplierId || null, 
       notes: values.notes || null, 
       partsUsed: values.partsUsed?.map(p => {
-        const item = inventory?.find(i => i.id === p.inventoryItemId);
+        if (p.inventoryItemId && p.inventoryItemId > 0) {
+          const item = inventory?.find(i => i.id === p.inventoryItemId);
+          return {
+            inventoryItemId: p.inventoryItemId,
+            quantity: p.quantity,
+            itemName: item?.name || "Desconhecido",
+            unitCost: item?.unitPrice || 0
+          };
+        }
         return {
-          inventoryItemId: p.inventoryItemId,
+          inventoryItemId: 0,
           quantity: p.quantity,
-          itemName: item?.name || "Desconhecido",
-          unitCost: item?.unitPrice || 0
+          itemName: p.itemName || "Peça Manutenção",
+          unitCost: p.unitCost || 0
         };
       }) || [] 
     };
@@ -189,7 +199,7 @@ export default function AdminMaintenance() {
                   <FormItem><FormLabel>Viatura *</FormLabel>
                     <Select onValueChange={v => field.onChange(Number(v))} value={field.value?.toString()}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger></FormControl>
-                      <SelectContent>{vehicles?.map(v => <SelectItem key={v.id} value={v.id.toString()}>{v.plate}</SelectItem>)}</SelectContent>
+                      <SelectContent>{vehicles?.map(v => <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>)}</SelectContent>
                     </Select><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="status" render={({ field }) => (
@@ -243,10 +253,11 @@ export default function AdminMaintenance() {
                 {fields.map((field, index) => (
                   <div key={field.id} className="flex gap-4 items-end bg-muted/30 p-3 rounded-xl border border-border">
                     <FormField control={form.control} name={`partsUsed.${index}.inventoryItemId`} render={({field: f}) => (
-                      <FormItem className="flex-1"><FormLabel>Peça</FormLabel>
-                        <Select onValueChange={(v) => f.onChange(Number(v))} value={f.value ? f.value.toString() : ""}>
+                      <FormItem className="flex-1 min-w-[120px]"><FormLabel>Peça (Inventário)</FormLabel>
+                        <Select onValueChange={(v) => f.onChange(Number(v))} value={f.value ? f.value.toString() : "0"}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Selecionar"/></SelectTrigger></FormControl>
                           <SelectContent>
+                            <SelectItem value="0">Peça Avulsa (Digitar)</SelectItem>
                             {inventory?.filter(i => i.currentStock > 0).map(i => (
                               <SelectItem key={i.id} value={i.id.toString()}>{i.name} ({i.currentStock} disp.)</SelectItem>
                             ))}
@@ -254,6 +265,16 @@ export default function AdminMaintenance() {
                         </Select>
                       </FormItem>
                     )} />
+                    {form.watch(`partsUsed.${index}.inventoryItemId`) === 0 && (
+                      <>
+                        <FormField control={form.control} name={`partsUsed.${index}.itemName`} render={({field: f}) => (
+                          <FormItem className="flex-[2]"><FormLabel>Nome da Peça</FormLabel><FormControl><Input placeholder="Ex: Filtro de Óleo" {...f} value={f.value || ""} /></FormControl></FormItem>
+                        )} />
+                        <FormField control={form.control} name={`partsUsed.${index}.unitCost`} render={({field: f}) => (
+                          <FormItem className="w-24"><FormLabel>Preço/U (Kz)</FormLabel><FormControl><Input type="number" step="0.01" {...f} value={f.value || ""} onChange={e => f.onChange(e.target.value ? parseFloat(e.target.value) : undefined)} /></FormControl></FormItem>
+                        )} />
+                      </>
+                    )}
                     <FormField control={form.control} name={`partsUsed.${index}.quantity`} render={({field: f}) => (
                       <FormItem className="w-24"><FormLabel>Qtd</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl></FormItem>
                     )} />

@@ -248,7 +248,14 @@ export default function AdminTrips() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="driverId" render={({ field }) => (
                   <FormItem><FormLabel>Motorista</FormLabel>
-                    <Select onValueChange={(v) => field.onChange(v ? parseInt(v) : null)} value={field.value?.toString() || ""}>
+                    <Select onValueChange={(v) => {
+                      const id = v === "null" ? null : parseInt(v);
+                      field.onChange(id);
+                      if (id) {
+                        const drv = drivers.find(d => d.id === id);
+                        if (drv && drv.vehicleId) form.setValue("vehicleId", drv.vehicleId);
+                      }
+                    }} value={field.value?.toString() || "null"}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Selecionar motorista" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="null">Não atribuído</SelectItem>
@@ -264,7 +271,7 @@ export default function AdminTrips() {
                       <SelectContent>
                         <SelectItem value="null">Não atribuída</SelectItem>
                         {vehicles?.filter(v => v.status === 'active').map(v => 
-                          <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand}</SelectItem>
+                          <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
                         )}
                       </SelectContent>
                     </Select>

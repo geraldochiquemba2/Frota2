@@ -162,9 +162,18 @@ export default function AdminFuelings() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="vehicleId" render={({ field }) => (
                   <FormItem><FormLabel>Viatura *</FormLabel>
-                    <Select onValueChange={v => field.onChange(Number(v))} value={field.value?.toString()}>
+                    <Select onValueChange={(v) => {
+                      const vid = Number(v);
+                      field.onChange(vid);
+                      if (vid) {
+                        const veh = vehicles?.find(vh => vh.id === vid);
+                        if (veh && veh.assignedDriverId) {
+                          form.setValue("driverId", veh.assignedDriverId);
+                        }
+                      }
+                    }} value={field.value?.toString() || ""}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger></FormControl>
-                      <SelectContent>{vehicles?.map(v => <SelectItem key={v.id} value={v.id.toString()}>{v.plate}</SelectItem>)}</SelectContent>
+                      <SelectContent>{vehicles?.map(v => <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>)}</SelectContent>
                     </Select><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="driverId" render={({ field }) => (
