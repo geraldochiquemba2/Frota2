@@ -224,7 +224,7 @@ export default function AdminVehicles() {
 
               <FormField control={form.control} name="assignedDriverId" render={({ field }) => (
                 <FormItem><FormLabel>Atribuir Motorista (Opcional)</FormLabel>
-                  <Select onValueChange={(val) => field.onChange(val ? parseInt(val) : null)} value={field.value?.toString() || ""}>
+                  <Select onValueChange={(val) => field.onChange(val === "null" ? null : parseInt(val))} value={field.value === null ? "null" : field.value?.toString() || ""}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecione motorista" /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="null">Não atribuído</SelectItem>

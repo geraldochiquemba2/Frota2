@@ -6,8 +6,9 @@ import { Truck, Navigation, Settings, Droplet, Hash } from "lucide-react";
 
 export default function DriverVehicle() {
   const { user } = useAuth();
-  const { data: vehicles } = useListVehicles();
-  const vehicle = vehicles?.find(v => v.assignedDriverId === user?.id);
+  // @ts-expect-error queryKey is provided internally
+  const { data: vehicles } = useListVehicles({ query: { refetchInterval: 5000 } });
+  const vehicle = vehicles?.find(v => v.assignedDriverId == user?.id);
 
   if (!vehicle) {
     return (

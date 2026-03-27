@@ -8,10 +8,12 @@ import { Link } from "wouter";
 
 export default function DriverDashboard() {
   const { user } = useAuth();
-  const { data: trips } = useListTrips();
-  const { data: vehicles } = useListVehicles();
-
-  const assignedVehicle = vehicles?.find(v => v.assignedDriverId === user?.id);
+  // @ts-expect-error queryKey is provided internally
+  const { data: vehicles } = useListVehicles({ query: { refetchInterval: 5000 } });
+  // @ts-expect-error queryKey is provided internally
+  const { data: trips } = useListTrips({ query: { refetchInterval: 5000 } });
+  
+  const assignedVehicle = vehicles?.find(v => v.assignedDriverId == user?.id);
   const myTrips = trips?.filter(t => t.driverId === user?.id) || [];
   
   const activeTrip = myTrips.find(t => t.status === "in_progress");
