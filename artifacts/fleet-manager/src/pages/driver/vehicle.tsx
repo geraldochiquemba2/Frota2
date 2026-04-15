@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useListVehicles } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, Navigation, Settings, Droplet, Hash } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 
 export default function DriverVehicle() {
   const { user } = useAuth();
@@ -50,7 +51,7 @@ export default function DriverVehicle() {
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Navigation className="w-4 h-4" /> <span className="text-sm">Quilometragem</span>
               </div>
-              <p className="text-lg font-semibold font-mono">{vehicle.mileage.toLocaleString()} km</p>
+              <p className="text-lg font-semibold font-mono">{formatNumber(vehicle.mileage, 0)} km</p>
             </div>
             <div className="bg-background/50 p-4 rounded-xl border border-border">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">

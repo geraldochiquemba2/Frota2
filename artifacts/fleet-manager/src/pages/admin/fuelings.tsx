@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatNumber } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 
@@ -134,10 +135,10 @@ export default function AdminFuelings() {
                 <TableCell>{f.date ? format(new Date(f.date), "dd/MM/yyyy") : "-"}</TableCell>
                 <TableCell className="font-medium">{f.vehiclePlate || f.vehicleId}</TableCell>
                 <TableCell>{f.driverName || "-"}</TableCell>
-                <TableCell>{f.liters.toFixed(1)} L</TableCell>
-                <TableCell>{f.pricePerLiter.toFixed(3)} Kz</TableCell>
-                <TableCell className="font-semibold">{f.totalCost.toFixed(2)} Kz</TableCell>
-                <TableCell>{f.mileage.toLocaleString()} km</TableCell>
+                <TableCell>{formatNumber(f.liters, 1)} L</TableCell>
+                <TableCell>{formatNumber(f.pricePerLiter, 3)} Kz</TableCell>
+                <TableCell className="font-semibold">{formatNumber(f.totalCost, 2)} Kz</TableCell>
+                <TableCell>{formatNumber(f.mileage, 0)} km</TableCell>
                 <TableCell>{f.station || "-"}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">

@@ -15,9 +15,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatNumber } from "@/lib/utils";
 
 const financeSchema = z.object({
-  type: z.enum(["income", "expense"]),
   category: z.string().min(1),
   description: z.string().min(1),
   amount: z.coerce.number().min(0.01),
@@ -34,7 +34,7 @@ export default function AdminFinance() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(financeSchema),
-    defaultValues: { type: "expense", category: "", description: "", amount: 0, date: new Date().toISOString().split('T')[0] }
+    defaultValues: { category: "", description: "", amount: 0, date: new Date().toISOString().split('T')[0] }
   });
 
   const createMutation = useCreateFinanceRecord({
@@ -59,11 +59,11 @@ export default function AdminFinance() {
   });
 
   const onSubmit = (values: FormValues) => {
-    createMutation.mutate({ data: { ...values, date: new Date(values.date).toISOString() } });
+    createMutation.mutate({ data: { ...values, type: "expense", date: new Date(values.date).toISOString() } });
   };
 
-  const totalIncome = records?.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0) || 0;
-  const totalExpense = records?.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0) || 0;
+  const totalExpense = records?.reduce((sum, r) => sum + r.amount, 0) || 0;
+  const expenseRecords = records || [];
 
   if (isLoading) return <Skeleton className="w-full h-96 rounded-2xl" />;
 
@@ -72,27 +72,22 @@ export default function AdminFinance() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-display font-bold">Finanças</h1>
-          <p className="text-muted-foreground">Acompanhar receitas e despesas</p>
+          <p className="text-muted-foreground">Acompanhar despesas da frota</p>
         </div>
         <Button onClick={() => { form.reset(); setIsDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" /> Adicionar Registo
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-card p-4 rounded-xl border border-border">
-          <p className="text-sm text-muted-foreground">Saldo</p>
-          <p className={`text-2xl font-bold font-mono ${totalIncome - totalExpense >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-            {(totalIncome - totalExpense).toLocaleString(undefined, {minimumFractionDigits: 2})} Kz
-          </p>
-        </div>
-        <div className="bg-card p-4 rounded-xl border border-border">
-          <p className="text-sm text-muted-foreground">Total Receitas</p>
-          <p className="text-2xl font-bold font-mono text-emerald-500">{totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2})} Kz</p>
-        </div>
-        <div className="bg-card p-4 rounded-xl border border-border">
-          <p className="text-sm text-muted-foreground">Total Despesas</p>
-          <p className="text-2xl font-bold font-mono text-rose-500">{totalExpense.toLocaleString(undefined, {minimumFractionDigits: 2})} Kz</p>
+      <div className="grid grid-cols-1 gap-4 mb-6">
+        <div className="bg-card p-6 rounded-xl border border-border flex justify-between items-center shadow-sm">
+          <div>
+            <p className="text-sm text-muted-foreground font-medium">Total de Despesas Acumuladas</p>
+            <p className="text-3xl font-bold font-mono text-rose-500 mt-1">{formatNumber(totalExpense, 2)} Kz</p>
+          </div>
+          <div className="bg-rose-500/10 p-3 rounded-full">
+            <ArrowDownRight className="w-8 h-8 text-rose-500" />
+          </div>
         </div>
       </div>
 
@@ -108,21 +103,18 @@ export default function AdminFinance() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {records?.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(r => (
+            {expenseRecords.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(r => (
               <TableRow key={r.id}>
                 <TableCell className="text-muted-foreground text-sm">{format(new Date(r.date), "dd/MM/yyyy")}</TableCell>
                 <TableCell>
-                  {r.type === 'income' ? 
-                    <span className="flex items-center text-emerald-500 text-xs font-semibold uppercase bg-emerald-500/10 w-fit px-2 py-1 rounded"><ArrowUpRight className="w-3 h-3 mr-1"/> Receita</span> : 
-                    <span className="flex items-center text-rose-500 text-xs font-semibold uppercase bg-rose-500/10 w-fit px-2 py-1 rounded"><ArrowDownRight className="w-3 h-3 mr-1"/> Despesa</span>
-                  }
+                  <span className="flex items-center text-rose-500 text-xs font-semibold uppercase bg-rose-500/10 w-fit px-2 py-1 rounded"><ArrowDownRight className="w-3 h-3 mr-1"/> Despesa</span>
                 </TableCell>
                 <TableCell>
                   <div className="font-medium">{r.description}</div>
                   <div className="text-xs text-muted-foreground">{r.category} {r.vehiclePlate ? `• ${r.vehiclePlate}` : ''}</div>
                 </TableCell>
-                <TableCell className={`text-right font-mono font-bold ${r.type === 'income' ? 'text-emerald-500' : 'text-foreground'}`}>
-                  {r.type === 'income' ? '+' : '-'}{r.amount.toLocaleString(undefined, {minimumFractionDigits: 2})} Kz
+                <TableCell className="text-right font-mono font-bold text-foreground">
+                  -{formatNumber(r.amount, 2)} Kz
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" onClick={() => confirm("Eliminar?") && deleteMutation.mutate({ id: r.id })}>
@@ -140,18 +132,7 @@ export default function AdminFinance() {
           <DialogHeader><DialogTitle>Adicionar Registo Financeiro</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="type" render={({ field }) => (
-                  <FormItem><FormLabel>Tipo</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="expense">Despesa</SelectItem>
-                        <SelectItem value="income">Receita</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  <FormMessage/></FormItem>
-                )}/>
+              <div className="grid grid-cols-1 gap-4">
                 <FormField control={form.control} name="date" render={({ field }) => (
                   <FormItem><FormLabel>Data</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage/></FormItem>
                 )}/>

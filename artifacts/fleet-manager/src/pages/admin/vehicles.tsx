@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatNumber } from "@/lib/utils";
 
 const vehicleSchema = z.object({
   plate: z.string().min(1, "Matrícula é obrigatória"),
@@ -159,7 +160,7 @@ export default function AdminVehicles() {
                 <TableCell className="text-muted-foreground">
                   {v.assignedDriverName || "Não atribuído"}
                 </TableCell>
-                <TableCell className="text-right font-mono text-sm">{v.mileage.toLocaleString()} km</TableCell>
+                <TableCell className="text-right font-mono text-sm">{formatNumber(v.mileage, 0)} km</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(v)}>

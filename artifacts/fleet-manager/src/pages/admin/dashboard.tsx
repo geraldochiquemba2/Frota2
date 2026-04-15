@@ -3,6 +3,7 @@ import { useGetDashboardStats } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, Map, AlertCircle, TrendingUp, Users, Droplets, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatNumber } from "@/lib/utils";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
     { title: "Viagens Ativas", value: stats?.activeTrips || 0, icon: Map, color: "text-cyan-500", bg: "bg-cyan-500/10" },
     { title: "Viagens Pendentes", value: stats?.pendingTrips || 0, icon: AlertCircle, color: "text-orange-500", bg: "bg-orange-500/10" },
     { title: "Stock Reduzido", value: stats?.lowStockItems || 0, icon: AlertCircle, color: "text-rose-500", bg: "bg-rose-500/10" },
-    { title: "Custo Combustível (Mês)", value: `${stats?.totalFuelCostThisMonth?.toLocaleString() || 0} Kz`, icon: Droplets, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { title: "Custo Combustível (Mês)", value: `${formatNumber(stats?.totalFuelCostThisMonth || 0, 2)} Kz`, icon: Droplets, color: "text-purple-500", bg: "bg-purple-500/10" },
   ];
 
   return (

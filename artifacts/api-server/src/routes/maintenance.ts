@@ -36,7 +36,7 @@ router.post("/", requireAuth, async (req, res) => {
   // Auto-create finance record if cost provided and status is completed
   if (cost && status === "completed") {
     await db.insert(financeRecordsTable).values({
-      type: "expense", category: "Manutenção", description: `${type} - ${description}`,
+      category: "Manutenção", description: `${type} - ${description}`,
       amount: cost, date: new Date(date), vehicleId, referenceId: m.id, referenceType: "maintenance",
     });
   }

@@ -34,7 +34,7 @@ router.post("/", requireAuth, async (req, res) => {
   }).returning();
   // Auto-create finance record
   await db.insert(financeRecordsTable).values({
-    type: "expense", category: "Combustível", description: `Abastecimento - Viatura ${vehicleId}`,
+    category: "Combustível", description: `Abastecimento - Viatura ${vehicleId}`,
     amount: totalCost, date: new Date(date), vehicleId, referenceId: f.id, referenceType: "fueling",
   });
   const users = await db.select().from(usersTable);

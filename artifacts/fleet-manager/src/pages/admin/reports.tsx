@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Download, Droplets, Wrench } from "lucide-react";
 import { format } from "date-fns";
+import { formatNumber } from "@/lib/utils";
 
 function printReport(title: string, content: string) {
   const win = window.open("", "_blank");
@@ -44,14 +45,14 @@ export default function AdminReports() {
   function exportFueling() {
     if (!fuelQuery.data) return;
     const d = fuelQuery.data;
-    const rows = d.records.map(r => `<tr><td>${r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</td><td>${r.vehiclePlate || r.vehicleId}</td><td>${r.driverName || "-"}</td><td>${r.liters.toFixed(1)} L</td><td>${r.pricePerLiter.toFixed(3)} Kz</td><td>${r.totalCost.toFixed(2)} Kz</td><td>${r.mileage.toLocaleString()} km</td><td>${r.station || "-"}</td></tr>`).join("");
+    const rows = d.records.map(r => `<tr><td>${r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</td><td>${r.vehiclePlate || r.vehicleId}</td><td>${r.driverName || "-"}</td><td>${formatNumber(r.liters, 1)} L</td><td>${formatNumber(r.pricePerLiter, 3)} Kz</td><td>${formatNumber(r.totalCost, 2)} Kz</td><td>${formatNumber(r.mileage, 0)} km</td><td>${r.station || "-"}</td></tr>`).join("");
     printReport("Relatório de Abastecimentos", `
       <h1>Relatório de Abastecimentos</h1>
       <p>Gerado em ${format(new Date(), "dd/MM/yyyy HH:mm")}</p>
       <div class="summary">
-        <div class="stat"><div class="stat-value">${d.totalLiters.toFixed(1)} L</div><div class="stat-label">Total Litros</div></div>
-        <div class="stat"><div class="stat-value">${d.totalCost.toFixed(2)} Kz</div><div class="stat-label">Custo Total</div></div>
-        <div class="stat"><div class="stat-value">${d.averagePricePerLiter.toFixed(3)} Kz</div><div class="stat-label">Preço Médio/L</div></div>
+        <div class="stat"><div class="stat-value">${formatNumber(d.totalLiters, 1)} L</div><div class="stat-label">Total Litros</div></div>
+        <div class="stat"><div class="stat-value">${formatNumber(d.totalCost, 2)} Kz</div><div class="stat-label">Custo Total</div></div>
+        <div class="stat"><div class="stat-value">${formatNumber(d.averagePricePerLiter, 3)} Kz</div><div class="stat-label">Preço Médio/L</div></div>
         <div class="stat"><div class="stat-value">${d.records.length}</div><div class="stat-label">Nº Abastecimentos</div></div>
       </div>
       <table><thead><tr><th>Data</th><th>Viatura</th><th>Motorista</th><th>Litros</th><th>Preço/L</th><th>Total</th><th>Km</th><th>Posto</th></tr></thead><tbody>${rows}</tbody></table>
@@ -61,12 +62,12 @@ export default function AdminReports() {
   function exportMaintenance() {
     if (!maintQuery.data) return;
     const d = maintQuery.data;
-    const rows = d.records.map(r => `<tr><td>${r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</td><td>${r.vehiclePlate || r.vehicleId}</td><td>${r.type}</td><td>${r.description}</td><td>${r.status === "completed" ? "Concluído" : r.status === "in_progress" ? "Em Curso" : "Agendado"}</td><td>${r.cost ? `${r.cost.toFixed(2)} Kz` : "-"}</td><td>${r.supplierName || "-"}</td></tr>`).join("");
+    const rows = d.records.map(r => `<tr><td>${r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</td><td>${r.vehiclePlate || r.vehicleId}</td><td>${r.type}</td><td>${r.description}</td><td>${r.status === "completed" ? "Concluído" : r.status === "in_progress" ? "Em Curso" : "Agendado"}</td><td>${r.cost ? `${formatNumber(r.cost, 2)} Kz` : "-"}</td><td>${r.supplierName || "-"}</td></tr>`).join("");
     printReport("Relatório de Manutenção", `
       <h1>Relatório de Manutenção</h1>
       <p>Gerado em ${format(new Date(), "dd/MM/yyyy HH:mm")}</p>
       <div class="summary">
-        <div class="stat"><div class="stat-value">${d.totalCost.toFixed(2)} Kz</div><div class="stat-label">Custo Total</div></div>
+        <div class="stat"><div class="stat-value">${formatNumber(d.totalCost, 2)} Kz</div><div class="stat-label">Custo Total</div></div>
         <div class="stat"><div class="stat-value">${d.records.length}</div><div class="stat-label">Nº Registos</div></div>
       </div>
       <table><thead><tr><th>Data</th><th>Viatura</th><th>Tipo</th><th>Descrição</th><th>Estado</th><th>Custo</th><th>Fornecedor</th></tr></thead><tbody>${rows}</tbody></table>
@@ -108,9 +109,9 @@ export default function AdminReports() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                  { label: "Total Litros", value: `${fuelQuery.data.totalLiters.toFixed(1)} L` },
-                  { label: "Custo Total", value: `${fuelQuery.data.totalCost.toFixed(2)} Kz` },
-                  { label: "Preço Médio/L", value: `${fuelQuery.data.averagePricePerLiter.toFixed(3)} Kz` },
+                  { label: "Total Litros", value: `${formatNumber(fuelQuery.data.totalLiters, 1)} L` },
+                  { label: "Custo Total", value: `${formatNumber(fuelQuery.data.totalCost, 2)} Kz` },
+                  { label: "Preço Médio/L", value: `${formatNumber(fuelQuery.data.averagePricePerLiter, 3)} Kz` },
                   { label: "Nº Abastecimentos", value: fuelQuery.data.records.length },
                 ].map((s, i) => (
                   <Card key={i} className="bg-card border-border"><CardContent className="p-4"><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-xl font-bold mt-1">{s.value}</p></CardContent></Card>
@@ -125,10 +126,10 @@ export default function AdminReports() {
                         <TableCell>{r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</TableCell>
                         <TableCell>{r.vehiclePlate || r.vehicleId}</TableCell>
                         <TableCell>{r.driverName || "-"}</TableCell>
-                        <TableCell>{r.liters.toFixed(1)} L</TableCell>
-                        <TableCell>{r.pricePerLiter.toFixed(3)} Kz</TableCell>
-                        <TableCell>{r.totalCost.toFixed(2)} Kz</TableCell>
-                        <TableCell>{r.mileage.toLocaleString()} km</TableCell>
+                        <TableCell>{formatNumber(r.liters, 1)} L</TableCell>
+                        <TableCell>{formatNumber(r.pricePerLiter, 3)} Kz</TableCell>
+                        <TableCell>{formatNumber(r.totalCost, 2)} Kz</TableCell>
+                        <TableCell>{formatNumber(r.mileage, 0)} km</TableCell>
                       </TableRow>
                     ))}
                     {fuelQuery.data.records.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum registo encontrado</TableCell></TableRow>}
@@ -161,7 +162,7 @@ export default function AdminReports() {
             <>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { label: "Custo Total", value: `${maintQuery.data.totalCost.toFixed(2)} Kz` },
+                  { label: "Custo Total", value: `${formatNumber(maintQuery.data.totalCost, 2)} Kz` },
                   { label: "Nº Registos", value: maintQuery.data.records.length },
                 ].map((s, i) => (
                   <Card key={i} className="bg-card border-border"><CardContent className="p-4"><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-xl font-bold mt-1">{s.value}</p></CardContent></Card>
@@ -178,7 +179,7 @@ export default function AdminReports() {
                         <TableCell>{r.type}</TableCell>
                         <TableCell className="max-w-xs truncate">{r.description}</TableCell>
                         <TableCell>{r.status === "completed" ? "Concluído" : r.status === "in_progress" ? "Em Curso" : "Agendado"}</TableCell>
-                        <TableCell>{r.cost ? `${r.cost.toFixed(2)} Kz` : "-"}</TableCell>
+                        <TableCell>{r.cost ? `${formatNumber(r.cost, 2)} Kz` : "-"}</TableCell>
                       </TableRow>
                     ))}
                     {maintQuery.data.records.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum registo encontrado</TableCell></TableRow>}
