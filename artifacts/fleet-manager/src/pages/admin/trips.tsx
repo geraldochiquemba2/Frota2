@@ -55,6 +55,7 @@ export default function AdminTrips() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -135,6 +136,16 @@ export default function AdminTrips() {
     }
   };
 
+
+
+  const filteredTrips = trips?.filter(t => 
+    t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (t.driverName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (t.vehiclePlate || "").toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   const getStatusColor = (status: string) => {
     switch(status) {
       case 'completed': return 'bg-emerald-500/20 text-emerald-500';
@@ -176,6 +187,16 @@ export default function AdminTrips() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2 bg-card p-4 rounded-2xl border border-border shadow-sm">
+        <Search className="w-4 h-4 text-muted-foreground" />
+        <Input 
+          placeholder="Pesquisar por título, origem, destino, motorista ou viatura..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border-none bg-transparent focus-visible:ring-0"
+        />
+      </div>
+
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-muted/50">
@@ -189,7 +210,14 @@ export default function AdminTrips() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {trips?.map(t => (
+            {filteredTrips.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  Nenhuma viagem encontrada
+                </TableCell>
+              </TableRow>
+            )}
+            {filteredTrips.map(t => (
               <TableRow key={t.id} className="hover:bg-muted/30">
                 <TableCell className="font-medium text-foreground">{t.title}</TableCell>
                 <TableCell>

@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Wrench } from "lucide-react";
+import { Plus, Edit, Trash2, Wrench, Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,7 @@ export default function AdminMaintenance() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Maintenance | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -135,6 +136,13 @@ export default function AdminMaintenance() {
     setDeleteId(null);
   }
 
+  const filteredMaintenance = maintenance?.filter(m => 
+    (m.vehiclePlate || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (m.supplierName || "").toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   if (isLoading) return <div className="space-y-4">{[1,2,3,4].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>;
 
   return (
@@ -148,6 +156,16 @@ export default function AdminMaintenance() {
           </div>
         </div>
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Nova Manutenção</Button>
+      </div>
+
+      <div className="flex items-center gap-2 bg-card p-4 rounded-2xl border border-border shadow-sm">
+        <Search className="w-4 h-4 text-muted-foreground" />
+        <Input 
+          placeholder="Pesquisar por viatura, tipo, descrição ou fornecedor..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border-none bg-transparent focus-visible:ring-0"
+        />
       </div>
 
       <div className="rounded-2xl border border-border overflow-hidden bg-card">
@@ -165,7 +183,7 @@ export default function AdminMaintenance() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {maintenance?.map(m => (
+            {filteredMaintenance.map(m => (
               <TableRow key={m.id} className="hover:bg-muted/20 transition-colors">
                 <TableCell>{m.date ? format(new Date(m.date), "dd/MM/yyyy") : "-"}</TableCell>
                 <TableCell className="font-medium">{m.vehiclePlate || m.vehicleId}</TableCell>
@@ -182,8 +200,8 @@ export default function AdminMaintenance() {
                 </TableCell>
               </TableRow>
             ))}
-            {(!maintenance || maintenance.length === 0) && (
-              <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">Nenhuma manutenção registada</TableCell></TableRow>
+            {(!filteredMaintenance || filteredMaintenance.length === 0) && (
+              <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">Nenhuma manutenção encontrada</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

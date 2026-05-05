@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Package, ArrowUpDown } from "lucide-react";
+import { Plus, Edit, Trash2, Package, ArrowUpDown, Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,7 @@ export default function AdminInventory() {
   const [isMovementDialog, setIsMovementDialog] = useState(false);
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const itemForm = useForm<z.infer<typeof itemSchema>>({ resolver: zodResolver(itemSchema), defaultValues: { name: "", category: "", unit: "un", currentStock: 0, minStock: 0, unitPrice: null, supplierId: null, notes: "" } });
   const movForm = useForm<z.infer<typeof movementSchema>>({ resolver: zodResolver(movementSchema), defaultValues: { inventoryItemId: 0, type: "in", quantity: 0, reason: "", date: new Date().toISOString().slice(0, 10) } });
@@ -86,6 +87,12 @@ export default function AdminInventory() {
     setDeleteId(null);
   }
 
+  const filteredItems = items?.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.supplierName || "").toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   if (isLoading) return <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>;
 
   return (
@@ -102,8 +109,20 @@ export default function AdminInventory() {
       </div>
 
       <Tabs defaultValue="items">
-        <TabsList><TabsTrigger value="items">Itens</TabsTrigger><TabsTrigger value="movements">Movimentos</TabsTrigger></TabsList>
+        <TabsList>
+          <TabsTrigger value="items">Itens</TabsTrigger>
+          <TabsTrigger value="movements">Movimentos</TabsTrigger>
+        </TabsList>
         <TabsContent value="items">
+          <div className="flex items-center gap-2 bg-card p-4 rounded-2xl border border-border shadow-sm mt-4">
+            <Search className="w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Pesquisar por nome, categoria ou fornecedor..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border-none bg-transparent focus-visible:ring-0"
+            />
+          </div>
           <div className="rounded-2xl border border-border overflow-hidden bg-card mt-4">
             <Table>
               <TableHeader>
@@ -115,7 +134,7 @@ export default function AdminInventory() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items?.map(item => (
+                {filteredItems.map(item => (
                   <TableRow key={item.id} className="hover:bg-muted/20 transition-colors">
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>{item.category}</TableCell>
@@ -133,7 +152,7 @@ export default function AdminInventory() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {(!items || items.length === 0) && <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground">Nenhum item em inventário</TableCell></TableRow>}
+                {(!filteredItems || filteredItems.length === 0) && <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground">Nenhum item encontrado</TableCell></TableRow>}
               </TableBody>
             </Table>
           </div>

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Truck } from "lucide-react";
+import { Plus, Edit, Trash2, Truck, Search } from "lucide-react";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,6 @@ const vehicleSchema = z.object({
   status: z.enum(["active", "maintenance", "inactive"]),
   mileage: z.coerce.number().min(0),
   fuelType: z.string().min(1, "Tipo de Combustível obrigatório"),
-  assignedDriverId: z.coerce.number().optional().nullable(),
 });
 
 type FormValues = z.infer<typeof vehicleSchema>;
@@ -33,10 +32,10 @@ type FormValues = z.infer<typeof vehicleSchema>;
 export default function AdminVehicles() {
   const { data: vehicles, isLoading } = useListVehicles();
   const { data: users } = useListUsers();
-  const drivers = users?.filter(u => u.role === "driver" && u.active) || [];
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -45,7 +44,7 @@ export default function AdminVehicles() {
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
       plate: "", brand: "", model: "", year: new Date().getFullYear(),
-      status: "active", mileage: 0, fuelType: "Diesel", assignedDriverId: null
+      status: "active", mileage: 0, fuelType: "Diesel"
     }
   });
 
@@ -88,7 +87,7 @@ export default function AdminVehicles() {
     setEditingVehicle(null);
     form.reset({
       plate: "", brand: "", model: "", year: new Date().getFullYear(),
-      status: "active", mileage: 0, fuelType: "Diesel", assignedDriverId: null
+      status: "active", mileage: 0, fuelType: "Diesel"
     });
     setIsDialogOpen(true);
   };
@@ -97,8 +96,7 @@ export default function AdminVehicles() {
     setEditingVehicle(v);
     form.reset({
       plate: v.plate, brand: v.brand, model: v.model, year: v.year,
-      status: v.status, mileage: v.mileage, fuelType: v.fuelType,
-      assignedDriverId: v.assignedDriverId
+      status: v.status, mileage: v.mileage, fuelType: v.fuelType
     });
     setIsDialogOpen(true);
   };
@@ -110,6 +108,13 @@ export default function AdminVehicles() {
       createMutation.mutate({ data: values });
     }
   };
+
+  const filteredVehicles = vehicles?.filter(v => 
+    v.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (v.assignedDriverName || "").toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   if (isLoading) return <Skeleton className="w-full h-96 rounded-2xl" />;
 
@@ -125,6 +130,16 @@ export default function AdminVehicles() {
         </Button>
       </div>
 
+      <div className="flex items-center gap-2 bg-card p-4 rounded-2xl border border-border shadow-sm">
+        <Search className="w-4 h-4 text-muted-foreground" />
+        <Input 
+          placeholder="Pesquisar por matrícula, marca, modelo ou motorista..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border-none bg-transparent focus-visible:ring-0"
+        />
+      </div>
+
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-muted/50">
@@ -138,14 +153,14 @@ export default function AdminVehicles() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {vehicles?.length === 0 && (
+            {filteredVehicles.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   Nenhuma viatura encontrada
                 </TableCell>
               </TableRow>
             )}
-            {vehicles?.map(v => (
+            {filteredVehicles.map(v => (
               <TableRow key={v.id} className="hover:bg-muted/30">
                 <TableCell className="font-mono font-medium">{v.plate}</TableCell>
                 <TableCell>
@@ -223,19 +238,7 @@ export default function AdminVehicles() {
                 )}/>
               </div>
 
-              <FormField control={form.control} name="assignedDriverId" render={({ field }) => (
-                <FormItem><FormLabel>Atribuir Motorista (Opcional)</FormLabel>
-                  <Select onValueChange={(val) => field.onChange(val === "null" ? null : parseInt(val))} value={field.value === null ? "null" : field.value?.toString() || ""}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione motorista" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="null">Não atribuído</SelectItem>
-                      {drivers.map(d => (
-                        <SelectItem key={d.id} value={d.id.toString()}>{d.name} ({d.phone})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                <FormMessage/></FormItem>
-              )}/>
+
 
               <div className="flex justify-end pt-4">
                 <Button type="button" variant="ghost" className="mr-2" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>

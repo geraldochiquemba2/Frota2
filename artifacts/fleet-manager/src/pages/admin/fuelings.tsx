@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Droplets } from "lucide-react";
+import { Plus, Edit, Trash2, Droplets, Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,6 +44,7 @@ export default function AdminFuelings() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Fueling | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -99,6 +100,12 @@ export default function AdminFuelings() {
     if (liters && ppl) form.setValue("totalCost", parseFloat((liters * ppl).toFixed(2)));
   }, [liters, ppl]);
 
+  const filteredFuelings = fuelings?.filter(f => 
+    (f.vehiclePlate || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (f.driverName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (f.station || "").toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   if (isLoading) return <div className="space-y-4">{[1,2,3,4].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>;
 
   return (
@@ -112,6 +119,16 @@ export default function AdminFuelings() {
           </div>
         </div>
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Novo Abastecimento</Button>
+      </div>
+
+      <div className="flex items-center gap-2 bg-card p-4 rounded-2xl border border-border shadow-sm">
+        <Search className="w-4 h-4 text-muted-foreground" />
+        <Input 
+          placeholder="Pesquisar por viatura, motorista ou posto..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border-none bg-transparent focus-visible:ring-0"
+        />
       </div>
 
       <div className="rounded-2xl border border-border overflow-hidden bg-card">
@@ -130,7 +147,7 @@ export default function AdminFuelings() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {fuelings?.map(f => (
+            {filteredFuelings.map(f => (
               <TableRow key={f.id} className="hover:bg-muted/20 transition-colors">
                 <TableCell>{f.date ? format(new Date(f.date), "dd/MM/yyyy") : "-"}</TableCell>
                 <TableCell className="font-medium">{f.vehiclePlate || f.vehicleId}</TableCell>
@@ -148,8 +165,8 @@ export default function AdminFuelings() {
                 </TableCell>
               </TableRow>
             ))}
-            {(!fuelings || fuelings.length === 0) && (
-              <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground">Nenhum abastecimento registado</TableCell></TableRow>
+            {(!filteredFuelings || filteredFuelings.length === 0) && (
+              <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground">Nenhum abastecimento encontrado</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

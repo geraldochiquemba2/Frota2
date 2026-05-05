@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Users2 } from "lucide-react";
+import { Plus, Edit, Trash2, Users2, Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +38,7 @@ export default function AdminUsers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", phone: "", pin: "", role: "driver", vehicleId: null, active: true } });
 
@@ -72,6 +73,11 @@ export default function AdminUsers() {
     setDeleteId(null);
   }
 
+  const filteredUsers = users?.filter(u => 
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.phone.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   if (isLoading) return <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>;
 
   return (
@@ -84,6 +90,16 @@ export default function AdminUsers() {
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Novo Utilizador</Button>
       </div>
 
+      <div className="flex items-center gap-2 bg-card p-4 rounded-2xl border border-border shadow-sm">
+        <Search className="w-4 h-4 text-muted-foreground" />
+        <Input 
+          placeholder="Pesquisar por nome ou telefone..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border-none bg-transparent focus-visible:ring-0"
+        />
+      </div>
+
       <div className="rounded-2xl border border-border overflow-hidden bg-card">
         <Table>
           <TableHeader>
@@ -92,7 +108,7 @@ export default function AdminUsers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map(u => (
+            {filteredUsers.map(u => (
               <TableRow key={u.id} className="hover:bg-muted/20 transition-colors">
                 <TableCell className="font-medium">{u.name}</TableCell>
                 <TableCell>{u.phone}</TableCell>
@@ -107,7 +123,7 @@ export default function AdminUsers() {
                 </TableCell>
               </TableRow>
             ))}
-            {(!users || users.length === 0) && <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">Nenhum utilizador encontrado</TableCell></TableRow>}
+            {(!filteredUsers || filteredUsers.length === 0) && <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">Nenhum utilizador encontrado</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>

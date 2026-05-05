@@ -21,7 +21,7 @@ if (Number.isNaN(port) || port <= 0) {
 async function ensureAdminExists() {
   try {
     const phone = "+244999999999"; // Normalized number
-    const pin = "1234567890";
+    const pin = "1234";
     const existing = await db.select().from(usersTable).where(eq(usersTable.phone, phone));
     if (existing.length === 0) {
       await db.insert(usersTable).values({

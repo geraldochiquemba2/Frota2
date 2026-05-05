@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Users } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Search } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,6 +35,7 @@ export default function AdminSuppliers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Supplier | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", contactName: "", phone: "", email: "", address: "", category: "", notes: "" } });
 
@@ -57,6 +58,13 @@ export default function AdminSuppliers() {
     setDeleteId(null);
   }
 
+  const filteredSuppliers = suppliers?.filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.contactName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.phone || "").toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   if (isLoading) return <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}</div>;
 
   return (
@@ -69,6 +77,16 @@ export default function AdminSuppliers() {
         <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Novo Fornecedor</Button>
       </div>
 
+      <div className="flex items-center gap-2 bg-card p-4 rounded-2xl border border-border shadow-sm">
+        <Search className="w-4 h-4 text-muted-foreground" />
+        <Input 
+          placeholder="Pesquisar por nome, categoria ou contacto..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="border-none bg-transparent focus-visible:ring-0"
+        />
+      </div>
+
       <div className="rounded-2xl border border-border overflow-hidden bg-card">
         <Table>
           <TableHeader>
@@ -77,7 +95,7 @@ export default function AdminSuppliers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {suppliers?.map(s => (
+            {filteredSuppliers.map(s => (
               <TableRow key={s.id} className="hover:bg-muted/20 transition-colors">
                 <TableCell className="font-medium">{s.name}</TableCell>
                 <TableCell>{s.contactName || "-"}</TableCell>
@@ -92,7 +110,7 @@ export default function AdminSuppliers() {
                 </TableCell>
               </TableRow>
             ))}
-            {(!suppliers || suppliers.length === 0) && <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">Nenhum fornecedor encontrado</TableCell></TableRow>}
+            {(!filteredSuppliers || filteredSuppliers.length === 0) && <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">Nenhum fornecedor encontrado</TableCell></TableRow>}
           </TableBody>
         </Table>
       </div>
