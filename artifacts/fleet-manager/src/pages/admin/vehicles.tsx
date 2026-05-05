@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Truck, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Truck, Search, BarChart3 } from "lucide-react";
+import { useLocation } from "wouter";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export default function AdminVehicles() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [, setLocation] = useLocation();
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -178,6 +180,9 @@ export default function AdminVehicles() {
                 <TableCell className="text-right font-mono text-sm">{formatNumber(v.mileage, 0)} km</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
+                    <Button variant="ghost" size="icon" title="Ver Relatório" onClick={() => setLocation(`/admin/reports?vehicleId=${v.id}`)}>
+                      <BarChart3 className="w-4 h-4 text-violet-400" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(v)}>
                       <Edit className="w-4 h-4 text-blue-400" />
                     </Button>

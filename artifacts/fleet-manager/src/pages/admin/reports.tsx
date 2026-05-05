@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Download, Droplets, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { formatNumber } from "@/lib/utils";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
 
 function printReport(title: string, content: string) {
   const win = window.open("", "_blank");
@@ -36,11 +37,32 @@ function printReport(title: string, content: string) {
 
 export default function AdminReports() {
   const { data: vehicles } = useListVehicles();
-  const [fuelFilters, setFuelFilters] = useState({ startDate: "", endDate: "", vehicleId: "" });
-  const [maintFilters, setMaintFilters] = useState({ startDate: "", endDate: "", vehicleId: "" });
+  
+  // Get vehicleId from URL if present
+  const searchParams = new URLSearchParams(window.location.search);
+  const urlVehicleId = searchParams.get("vehicleId") || "";
 
-  const fuelQuery = useGetFuelingsReport({ startDate: fuelFilters.startDate || undefined, endDate: fuelFilters.endDate || undefined, vehicleId: fuelFilters.vehicleId ? Number(fuelFilters.vehicleId) : undefined });
-  const maintQuery = useGetMaintenanceReport({ startDate: maintFilters.startDate || undefined, endDate: maintFilters.endDate || undefined, vehicleId: maintFilters.vehicleId ? Number(maintFilters.vehicleId) : undefined });
+  const [fuelFilters, setFuelFilters] = useState({ 
+    startDate: "", 
+    endDate: "", 
+    vehicleId: urlVehicleId 
+  });
+  const [maintFilters, setMaintFilters] = useState({ 
+    startDate: "", 
+    endDate: "", 
+    vehicleId: urlVehicleId 
+  });
+
+  const fuelQuery = useGetFuelingsReport({ 
+    startDate: fuelFilters.startDate || undefined, 
+    endDate: fuelFilters.endDate || undefined, 
+    vehicleId: fuelFilters.vehicleId ? Number(fuelFilters.vehicleId) : undefined 
+  });
+  const maintQuery = useGetMaintenanceReport({ 
+    startDate: maintFilters.startDate || undefined, 
+    endDate: maintFilters.endDate || undefined, 
+    vehicleId: maintFilters.vehicleId ? Number(maintFilters.vehicleId) : undefined 
+  });
 
   function exportFueling() {
     if (!fuelQuery.data) return;
@@ -107,32 +129,65 @@ export default function AdminReports() {
 
           {fuelQuery.data && (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[
-                  { label: "Total Litros", value: `${formatNumber(fuelQuery.data.totalLiters, 1)} L` },
-                  { label: "Custo Total", value: `${formatNumber(fuelQuery.data.totalCost, 2)} Kz` },
-                  { label: "Preço Médio/L", value: `${formatNumber(fuelQuery.data.averagePricePerLiter, 3)} Kz` },
-                  { label: "Nº Abastecimentos", value: fuelQuery.data.records.length },
-                ].map((s, i) => (
-                  <Card key={i} className="bg-card border-border"><CardContent className="p-4"><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-xl font-bold mt-1">{s.value}</p></CardContent></Card>
-                ))}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { label: "Total Litros", value: `${formatNumber(fuelQuery.data.totalLiters, 1)} L` },
+                      { label: "Custo Total", value: `${formatNumber(fuelQuery.data.totalCost, 2)} Kz` },
+                      { label: "Preço Médio/L", value: `${formatNumber(fuelQuery.data.averagePricePerLiter, 3)} Kz` },
+                      { label: "Nº Registos", value: fuelQuery.data.records.length },
+                    ].map((s, i) => (
+                      <Card key={i} className="bg-card border-border shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground uppercase font-semibold">{s.label}</p><p className="text-lg font-bold mt-1 text-primary">{s.value}</p></CardContent></Card>
+                    ))}
+                  </div>
+                  
+                  {fuelFilters.vehicleId && (
+                    <Card className="bg-primary/5 border-primary/20 shadow-sm">
+                      <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold text-primary">Resumo Individual</CardTitle></CardHeader>
+                      <CardContent>
+                        <p className="text-xs text-muted-foreground">Viatura: <span className="font-bold text-foreground">{vehicles?.find(v => v.id === Number(fuelFilters.vehicleId))?.plate}</span></p>
+                        <p className="text-xs text-muted-foreground mt-1">Eficiência média e custos calculados para o período selecionado.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                <Card className="lg:col-span-2 bg-card border-border shadow-sm">
+                  <CardHeader><CardTitle className="text-sm font-semibold">Custo por Viatura (Top 10)</CardTitle></CardHeader>
+                  <CardContent className="h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={fuelQuery.data.byVehicle.slice(0, 10)}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="vehiclePlate" fontSize={10} axisLine={false} tickLine={false} />
+                        <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} />
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                          formatter={(v: any) => [`${formatNumber(v, 0)} Kz`, 'Custo Total']}
+                        />
+                        <Bar dataKey="totalCost" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
               </div>
-              <div className="rounded-2xl border border-border overflow-hidden bg-card">
+
+              <div className="rounded-2xl border border-border overflow-hidden bg-card shadow-sm">
                 <Table>
-                  <TableHeader><TableRow className="bg-muted/30"><TableHead>Data</TableHead><TableHead>Viatura</TableHead><TableHead>Motorista</TableHead><TableHead>Litros</TableHead><TableHead>Preço/L</TableHead><TableHead>Total</TableHead><TableHead>Km</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow className="bg-muted/50"><TableHead>Data</TableHead><TableHead>Viatura</TableHead><TableHead>Motorista</TableHead><TableHead>Litros</TableHead><TableHead>Preço/L</TableHead><TableHead>Total</TableHead><TableHead>Km</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {fuelQuery.data.records.map(r => (
-                      <TableRow key={r.id} className="hover:bg-muted/20">
-                        <TableCell>{r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</TableCell>
-                        <TableCell>{r.vehiclePlate || r.vehicleId}</TableCell>
+                      <TableRow key={r.id} className="hover:bg-muted/20 transition-colors">
+                        <TableCell className="font-medium">{r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</TableCell>
+                        <TableCell><Badge variant="outline">{r.vehiclePlate || r.vehicleId}</Badge></TableCell>
                         <TableCell>{r.driverName || "-"}</TableCell>
-                        <TableCell>{formatNumber(r.liters, 1)} L</TableCell>
-                        <TableCell>{formatNumber(r.pricePerLiter, 3)} Kz</TableCell>
-                        <TableCell>{formatNumber(r.totalCost, 2)} Kz</TableCell>
-                        <TableCell>{formatNumber(r.mileage, 0)} km</TableCell>
+                        <TableCell className="font-mono">{formatNumber(r.liters, 1)} L</TableCell>
+                        <TableCell className="font-mono">{formatNumber(r.pricePerLiter, 2)} Kz</TableCell>
+                        <TableCell className="font-mono font-bold text-primary">{formatNumber(r.totalCost, 0)} Kz</TableCell>
+                        <TableCell className="font-mono">{formatNumber(r.mileage, 0)} km</TableCell>
                       </TableRow>
                     ))}
-                    {fuelQuery.data.records.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum registo encontrado</TableCell></TableRow>}
+                    {fuelQuery.data.records.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">Nenhum abastecimento encontrado no período</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
@@ -160,29 +215,66 @@ export default function AdminReports() {
 
           {maintQuery.data && (
             <>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: "Custo Total", value: `${formatNumber(maintQuery.data.totalCost, 2)} Kz` },
-                  { label: "Nº Registos", value: maintQuery.data.records.length },
-                ].map((s, i) => (
-                  <Card key={i} className="bg-card border-border"><CardContent className="p-4"><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-xl font-bold mt-1">{s.value}</p></CardContent></Card>
-                ))}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-1 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { label: "Custo Total", value: `${formatNumber(maintQuery.data.totalCost, 2)} Kz` },
+                      { label: "Nº Registos", value: maintQuery.data.records.length },
+                    ].map((s, i) => (
+                      <Card key={i} className="bg-card border-border shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground uppercase font-semibold">{s.label}</p><p className="text-lg font-bold mt-1 text-primary">{s.value}</p></CardContent></Card>
+                    ))}
+                  </div>
+
+                  {maintFilters.vehicleId && (
+                    <Card className="bg-primary/5 border-primary/20 shadow-sm">
+                      <CardHeader className="pb-2"><CardTitle className="text-sm font-semibold text-primary">Resumo Individual</CardTitle></CardHeader>
+                      <CardContent>
+                        <p className="text-xs text-muted-foreground">Viatura: <span className="font-bold text-foreground">{vehicles?.find(v => v.id === Number(maintFilters.vehicleId))?.plate}</span></p>
+                        <p className="text-xs text-muted-foreground mt-1">Histórico de intervenções e custos de manutenção.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                <Card className="lg:col-span-2 bg-card border-border shadow-sm">
+                  <CardHeader><CardTitle className="text-sm font-semibold">Distribuição por Tipo</CardTitle></CardHeader>
+                  <CardContent className="h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={maintQuery.data.byType} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis type="number" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} />
+                        <YAxis type="category" dataKey="type" fontSize={10} width={80} axisLine={false} tickLine={false} />
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                          formatter={(v: any) => [`${formatNumber(v, 0)} Kz`, 'Custo']}
+                        />
+                        <Bar dataKey="totalCost" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
               </div>
-              <div className="rounded-2xl border border-border overflow-hidden bg-card">
+
+              <div className="rounded-2xl border border-border overflow-hidden bg-card shadow-sm">
                 <Table>
-                  <TableHeader><TableRow className="bg-muted/30"><TableHead>Data</TableHead><TableHead>Viatura</TableHead><TableHead>Tipo</TableHead><TableHead>Descrição</TableHead><TableHead>Estado</TableHead><TableHead>Custo</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow className="bg-muted/50"><TableHead>Data</TableHead><TableHead>Viatura</TableHead><TableHead>Tipo</TableHead><TableHead>Descrição</TableHead><TableHead>Estado</TableHead><TableHead>Custo</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {maintQuery.data.records.map(r => (
-                      <TableRow key={r.id} className="hover:bg-muted/20">
-                        <TableCell>{r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</TableCell>
-                        <TableCell>{r.vehiclePlate || r.vehicleId}</TableCell>
+                      <TableRow key={r.id} className="hover:bg-muted/20 transition-colors">
+                        <TableCell className="font-medium">{r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</TableCell>
+                        <TableCell><Badge variant="outline">{r.vehiclePlate || r.vehicleId}</Badge></TableCell>
                         <TableCell>{r.type}</TableCell>
                         <TableCell className="max-w-xs truncate">{r.description}</TableCell>
-                        <TableCell>{r.status === "completed" ? "Concluído" : r.status === "in_progress" ? "Em Curso" : "Agendado"}</TableCell>
-                        <TableCell>{r.cost ? `${formatNumber(r.cost, 2)} Kz` : "-"}</TableCell>
+                        <TableCell>
+                          <Badge variant={r.status === 'completed' ? 'default' : r.status === 'in_progress' ? 'destructive' : 'secondary'} className="capitalize text-[10px]">
+                            {r.status === "completed" ? "Concluído" : r.status === "in_progress" ? "Em Curso" : "Agendado"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono font-bold text-primary">{r.cost ? `${formatNumber(r.cost, 0)} Kz` : "-"}</TableCell>
                       </TableRow>
                     ))}
-                    {maintQuery.data.records.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum registo encontrado</TableCell></TableRow>}
+                    {maintQuery.data.records.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">Nenhuma manutenção encontrada no período</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
