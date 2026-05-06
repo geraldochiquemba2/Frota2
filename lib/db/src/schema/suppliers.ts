@@ -11,6 +11,7 @@ export const suppliersTable = pgTable("suppliers", {
   address: text("address"),
   category: text("category"),
   notes: text("notes"),
+  certificationUrl: text("certification_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

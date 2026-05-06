@@ -47,6 +47,9 @@ app.use("/api", router);
 
 const frontendPath = path.resolve(import.meta.dirname, "../../fleet-manager/dist/public");
 
+// Serve uploads
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 // Serve frontend in production (Single Web Service deployment)
 app.use(express.static(frontendPath));
 

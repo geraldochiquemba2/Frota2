@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber } from "@/lib/utils";
+import { ImageUpload } from "@/components/ImageUpload";
 
 const vehicleSchema = z.object({
   plate: z.string().min(1, "Matrícula é obrigatória"),
@@ -26,6 +27,7 @@ const vehicleSchema = z.object({
   status: z.enum(["active", "maintenance", "inactive"]),
   mileage: z.coerce.number().min(0),
   fuelType: z.string().min(1, "Tipo de Combustível obrigatório"),
+  imageUrl: z.string().optional().nullable(),
 });
 
 type FormValues = z.infer<typeof vehicleSchema>;
@@ -46,7 +48,7 @@ export default function AdminVehicles() {
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
       plate: "", brand: "", model: "", year: new Date().getFullYear(),
-      status: "active", mileage: 0, fuelType: "Diesel"
+      status: "active", mileage: 0, fuelType: "Diesel", imageUrl: null
     }
   });
 
@@ -89,7 +91,7 @@ export default function AdminVehicles() {
     setEditingVehicle(null);
     form.reset({
       plate: "", brand: "", model: "", year: new Date().getFullYear(),
-      status: "active", mileage: 0, fuelType: "Diesel"
+      status: "active", mileage: 0, fuelType: "Diesel", imageUrl: null
     });
     setIsDialogOpen(true);
   };
@@ -98,7 +100,8 @@ export default function AdminVehicles() {
     setEditingVehicle(v);
     form.reset({
       plate: v.plate, brand: v.brand, model: v.model, year: v.year,
-      status: v.status, mileage: v.mileage, fuelType: v.fuelType
+      status: v.status, mileage: v.mileage, fuelType: v.fuelType,
+      imageUrl: v.imageUrl
     });
     setIsDialogOpen(true);
   };
@@ -166,8 +169,21 @@ export default function AdminVehicles() {
               <TableRow key={v.id} className="hover:bg-muted/30">
                 <TableCell className="font-mono font-medium">{v.plate}</TableCell>
                 <TableCell>
-                  <div className="font-semibold text-foreground">{v.brand} {v.model}</div>
-                  <div className="text-xs text-muted-foreground">{v.year} • {v.fuelType}</div>
+                  <div className="flex items-center gap-3">
+                    {v.imageUrl ? (
+                      <div className="w-10 h-10 rounded-lg overflow-hidden border border-border">
+                        <img src={v.imageUrl} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center border border-border">
+                        <Truck className="w-5 h-5 text-muted-foreground/50" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-semibold text-foreground">{v.brand} {v.model}</div>
+                      <div className="text-xs text-muted-foreground">{v.year} • {v.fuelType}</div>
+                    </div>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Badge variant={v.status === 'active' ? 'default' : v.status === 'maintenance' ? 'destructive' : 'secondary'} className="capitalize">
@@ -244,6 +260,15 @@ export default function AdminVehicles() {
               </div>
 
 
+
+              <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <ImageUpload value={field.value} onChange={field.onChange} label="Foto da Viatura" />
+                  </FormControl>
+                  <FormMessage/>
+                </FormItem>
+              )}/>
 
               <div className="flex justify-end pt-4">
                 <Button type="button" variant="ghost" className="mr-2" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>

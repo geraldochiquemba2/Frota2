@@ -36,6 +36,7 @@ export interface User {
   role: UserRole;
   active: boolean;
   vehicleId?: number | null;
+  avatarUrl?: string | null;
   createdAt: string;
 }
 
@@ -58,6 +59,7 @@ export interface CreateUserRequest {
   pin: string;
   role: CreateUserRequestRole;
   vehicleId?: number | null;
+  avatarUrl?: string | null;
 }
 
 export type UpdateUserRequestRole =
@@ -75,6 +77,7 @@ export interface UpdateUserRequest {
   role?: UpdateUserRequestRole;
   vehicleId?: number | null;
   active?: boolean;
+  avatarUrl?: string | null;
 }
 
 export type VehicleStatus = (typeof VehicleStatus)[keyof typeof VehicleStatus];
@@ -96,6 +99,7 @@ export interface Vehicle {
   fuelType: string;
   assignedDriverId?: number | null;
   assignedDriverName?: string | null;
+  imageUrl?: string | null;
   createdAt: string;
 }
 
@@ -117,6 +121,7 @@ export interface CreateVehicleRequest {
   mileage: number;
   fuelType: string;
   assignedDriverId?: number | null;
+  imageUrl?: string | null;
 }
 
 export type UpdateVehicleRequestStatus =
@@ -137,6 +142,7 @@ export interface UpdateVehicleRequest {
   mileage?: number;
   fuelType?: string;
   assignedDriverId?: number | null;
+  imageUrl?: string | null;
 }
 
 export type TripStatus = (typeof TripStatus)[keyof typeof TripStatus];
@@ -411,6 +417,7 @@ export interface Supplier {
   address?: string | null;
   category?: string | null;
   notes?: string | null;
+  certificationUrl?: string | null;
   createdAt: string;
 }
 
@@ -422,6 +429,7 @@ export interface CreateSupplierRequest {
   address?: string | null;
   category?: string | null;
   notes?: string | null;
+  certificationUrl?: string | null;
 }
 
 export interface UpdateSupplierRequest {
@@ -432,6 +440,7 @@ export interface UpdateSupplierRequest {
   address?: string | null;
   category?: string | null;
   notes?: string | null;
+  certificationUrl?: string | null;
 }
 
 export type FinanceRecordType =

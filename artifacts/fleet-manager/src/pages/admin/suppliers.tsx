@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Users, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Search, FileText } from "lucide-react";
+import { ImageUpload } from "@/components/ImageUpload";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +23,7 @@ const schema = z.object({
   address: z.string().optional().nullable(),
   category: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  certificationUrl: z.string().optional().nullable(),
 });
 
 export default function AdminSuppliers() {
@@ -37,13 +39,22 @@ export default function AdminSuppliers() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", contactName: "", phone: "", email: "", address: "", category: "", notes: "" } });
+  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", contactName: "", phone: "", email: "", address: "", category: "", notes: "", certificationUrl: null } });
 
-  function openCreate() { setEditItem(null); form.reset({ name: "", contactName: "", phone: "", email: "", address: "", category: "", notes: "" }); setIsDialogOpen(true); }
-  function openEdit(s: Supplier) { setEditItem(s); form.reset({ name: s.name, contactName: s.contactName || "", phone: s.phone || "", email: s.email || "", address: s.address || "", category: s.category || "", notes: s.notes || "" }); setIsDialogOpen(true); }
+  function openCreate() { setEditItem(null); form.reset({ name: "", contactName: "", phone: "", email: "", address: "", category: "", notes: "", certificationUrl: null }); setIsDialogOpen(true); }
+  function openEdit(s: Supplier) { setEditItem(s); form.reset({ name: s.name, contactName: s.contactName || "", phone: s.phone || "", email: s.email || "", address: s.address || "", category: s.category || "", notes: s.notes || "", certificationUrl: s.certificationUrl }); setIsDialogOpen(true); }
 
   async function onSubmit(values: z.infer<typeof schema>) {
-    const payload = { name: values.name, contactName: values.contactName || null, phone: values.phone || null, email: values.email || null, address: values.address || null, category: values.category || null, notes: values.notes || null };
+    const payload = { 
+      name: values.name, 
+      contactName: values.contactName || null, 
+      phone: values.phone || null, 
+      email: values.email || null, 
+      address: values.address || null, 
+      category: values.category || null, 
+      notes: values.notes || null,
+      certificationUrl: values.certificationUrl || null
+    };
     if (editItem) { await updateSupplier.mutateAsync({ id: editItem.id, data: payload }); toast({ title: "Fornecedor atualizado" }); }
     else { await createSupplier.mutateAsync({ data: payload }); toast({ title: "Fornecedor criado" }); }
     queryClient.invalidateQueries();
@@ -104,6 +115,11 @@ export default function AdminSuppliers() {
                 <TableCell>{s.category || "-"}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
+                    {s.certificationUrl && (
+                      <Button variant="ghost" size="icon" title="Ver Certificação" onClick={() => window.open(s.certificationUrl!, "_blank")}>
+                        <FileText className="w-4 h-4 text-cyan-500" />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Edit className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteId(s.id)}><Trash2 className="w-4 h-4" /></Button>
                   </div>
@@ -131,6 +147,14 @@ export default function AdminSuppliers() {
               </div>
               <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Morada</FormLabel><FormControl><Input placeholder="Morada completa..." {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notas</FormLabel><FormControl><Input placeholder="Observações..." {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="certificationUrl" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <ImageUpload value={field.value} onChange={field.onChange} label="Certificações / Documentos" accept=".pdf,image/*" />
+                  </FormControl>
+                  <FormMessage/>
+                </FormItem>
+              )}/>
               <div className="flex justify-end gap-3 pt-2"><Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button type="submit">Guardar</Button></div>
             </form>
           </Form>

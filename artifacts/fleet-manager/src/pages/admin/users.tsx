@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ImageUpload } from "@/components/ImageUpload";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const schema = z.object({
   name: z.string().min(1, "Obrigatório"),
@@ -24,6 +26,7 @@ const schema = z.object({
   role: z.enum(["admin", "driver"]),
   vehicleId: z.coerce.number().optional().nullable(),
   active: z.boolean().optional(),
+  avatarUrl: z.string().optional().nullable(),
 });
 
 export default function AdminUsers() {
@@ -40,20 +43,20 @@ export default function AdminUsers() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", phone: "", pin: "", role: "driver", vehicleId: null, active: true } });
+  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", phone: "", pin: "", role: "driver", vehicleId: null, active: true, avatarUrl: null } });
 
-  function openCreate() { setEditUser(null); form.reset({ name: "", phone: "", pin: "", role: "driver", vehicleId: null, active: true }); setIsDialogOpen(true); }
-  function openEdit(u: User) { setEditUser(u); form.reset({ name: u.name, phone: u.phone, pin: "", role: u.role as any, vehicleId: u.vehicleId || null, active: u.active }); setIsDialogOpen(true); }
+  function openCreate() { setEditUser(null); form.reset({ name: "", phone: "", pin: "", role: "driver", vehicleId: null, active: true, avatarUrl: null }); setIsDialogOpen(true); }
+  function openEdit(u: User) { setEditUser(u); form.reset({ name: u.name, phone: u.phone, pin: "", role: u.role as any, vehicleId: u.vehicleId || null, active: u.active, avatarUrl: u.avatarUrl }); setIsDialogOpen(true); }
 
   async function onSubmit(values: z.infer<typeof schema>) {
     const payload = { ...values, vehicleId: values.vehicleId || null };
     if (editUser) {
-      const updatePayload: any = { name: payload.name, phone: payload.phone, role: payload.role, vehicleId: payload.vehicleId, active: payload.active };
+      const updatePayload: any = { name: payload.name, phone: payload.phone, role: payload.role, vehicleId: payload.vehicleId, active: payload.active, avatarUrl: payload.avatarUrl };
       if (values.pin) updatePayload.pin = values.pin;
       await updateUser.mutateAsync({ id: editUser.id, data: updatePayload });
       toast({ title: "Utilizador atualizado" });
     } else {
-      await createUser.mutateAsync({ data: { name: payload.name, phone: payload.phone, pin: payload.pin, role: payload.role, vehicleId: payload.vehicleId } });
+      await createUser.mutateAsync({ data: { name: payload.name, phone: payload.phone, pin: payload.pin, role: payload.role, vehicleId: payload.vehicleId, avatarUrl: payload.avatarUrl } });
       toast({ title: "Utilizador criado" });
     }
     queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -110,7 +113,15 @@ export default function AdminUsers() {
           <TableBody>
             {filteredUsers.map(u => (
               <TableRow key={u.id} className="hover:bg-muted/20 transition-colors">
-                <TableCell className="font-medium">{u.name}</TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={u.avatarUrl || undefined} />
+                      <AvatarFallback>{u.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span>{u.name}</span>
+                  </div>
+                </TableCell>
                 <TableCell>{u.phone}</TableCell>
                 <TableCell><Badge className={u.role === "admin" ? "bg-violet-500/10 text-violet-500 border-violet-500/20" : "bg-blue-500/10 text-blue-500 border-blue-500/20"}>{u.role === "admin" ? "Admin" : "Motorista"}</Badge></TableCell>
                 <TableCell><Badge className={u.active ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"}>{u.active ? "Ativo" : "Inativo"}</Badge></TableCell>
@@ -143,8 +154,23 @@ export default function AdminUsers() {
                 <FormField control={form.control} name="vehicleId" render={({ field }) => (<FormItem><FormLabel>Viatura</FormLabel><Select onValueChange={v => field.onChange(v === "none" ? null : Number(v))} value={field.value?.toString() || "none"}><FormControl><SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger></FormControl><SelectContent><SelectItem value="none">Nenhuma</SelectItem>{vehicles?.map(v => <SelectItem key={v.id} value={v.id.toString()}>{v.plate}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
               </div>
               {editUser && (
-                <FormField control={form.control} name="active" render={({ field }) => (<FormItem className="flex items-center gap-3"><FormLabel>Ativo</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+                <FormField control={form.control} name="active" render={({ field }) => (
+                  <FormItem className="flex items-center gap-3">
+                    <FormLabel>Ativo</FormLabel>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )} />
               )}
+              <FormField control={form.control} name="avatarUrl" render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <ImageUpload value={field.value} onChange={field.onChange} label="Foto de Perfil" />
+                  </FormControl>
+                  <FormMessage/>
+                </FormItem>
+              )}/>
               <div className="flex justify-end gap-3 pt-2"><Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button type="submit">Guardar</Button></div>
             </form>
           </Form>
