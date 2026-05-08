@@ -997,6 +997,10 @@ components:
         vehicleId:
           type: integer
           nullable: true
+        vehicleIds:
+          type: array
+          items:
+            type: integer
         createdAt:
           type: string
       required: [id, name, phone, role, active, createdAt]
@@ -1013,9 +1017,10 @@ components:
         role:
           type: string
           enum: [admin, driver]
-        vehicleId:
-          type: integer
-          nullable: true
+        vehicleIds:
+          type: array
+          items:
+            type: integer
       required: [name, phone, pin, role]
 
     UpdateUserRequest:
@@ -1030,9 +1035,10 @@ components:
         role:
           type: string
           enum: [admin, driver]
-        vehicleId:
-          type: integer
-          nullable: true
+        vehicleIds:
+          type: array
+          items:
+            type: integer
         active:
           type: boolean
 

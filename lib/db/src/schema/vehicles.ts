@@ -12,6 +12,7 @@ export const vehiclesTable = pgTable("vehicles", {
   mileage: real("mileage").notNull().default(0),
   fuelType: text("fuel_type").notNull().default("diesel"),
   imageUrl: text("image_url"),
+  assignedDriverId: integer("assigned_driver_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

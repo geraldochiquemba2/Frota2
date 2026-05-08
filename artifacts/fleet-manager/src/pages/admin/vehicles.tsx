@@ -28,6 +28,7 @@ const vehicleSchema = z.object({
   mileage: z.coerce.number().min(0),
   fuelType: z.string().min(1, "Tipo de Combustível obrigatório"),
   imageUrl: z.string().optional().nullable(),
+  assignedDriverId: z.coerce.number().optional().nullable(),
 });
 
 type FormValues = z.infer<typeof vehicleSchema>;
@@ -48,7 +49,8 @@ export default function AdminVehicles() {
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
       plate: "", brand: "", model: "", year: new Date().getFullYear(),
-      status: "active", mileage: 0, fuelType: "Diesel", imageUrl: null
+      status: "active", mileage: 0, fuelType: "Diesel", imageUrl: null,
+      assignedDriverId: null
     }
   });
 
@@ -91,7 +93,8 @@ export default function AdminVehicles() {
     setEditingVehicle(null);
     form.reset({
       plate: "", brand: "", model: "", year: new Date().getFullYear(),
-      status: "active", mileage: 0, fuelType: "Diesel", imageUrl: null
+      status: "active", mileage: 0, fuelType: "Diesel", imageUrl: null,
+      assignedDriverId: null
     });
     setIsDialogOpen(true);
   };
@@ -101,7 +104,7 @@ export default function AdminVehicles() {
     form.reset({
       plate: v.plate, brand: v.brand, model: v.model, year: v.year,
       status: v.status, mileage: v.mileage, fuelType: v.fuelType,
-      imageUrl: v.imageUrl
+      imageUrl: v.imageUrl, assignedDriverId: (v as any).assignedDriverId || null
     });
     setIsDialogOpen(true);
   };
@@ -260,6 +263,20 @@ export default function AdminVehicles() {
               </div>
 
 
+
+              <FormField control={form.control} name="assignedDriverId" render={({ field }) => (
+                <FormItem><FormLabel>Motorista Atribuído</FormLabel>
+                  <Select onValueChange={(val) => field.onChange(val === "none" ? null : Number(val))} value={field.value?.toString() || "none"}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione um motorista" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum (Livre)</SelectItem>
+                      {users?.filter(u => u.role === 'driver').map(u => (
+                        <SelectItem key={u.id} value={u.id.toString()}>{u.name} ({u.phone})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                <FormMessage/></FormItem>
+              )}/>
 
               <FormField control={form.control} name="imageUrl" render={({ field }) => (
                 <FormItem>

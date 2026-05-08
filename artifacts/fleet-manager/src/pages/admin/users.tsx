@@ -17,16 +17,25 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ImageUpload } from "@/components/ImageUpload";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const schema = z.object({
   name: z.string().min(1, "Obrigatório"),
   phone: z.string().min(9, "Número inválido"),
-  pin: z.string().min(4, "Mínimo 4 caracteres"),
+  pin: z.string().optional().or(z.literal("")),
   role: z.enum(["admin", "driver"]),
-  vehicleId: z.coerce.number().optional().nullable(),
+  vehicleIds: z.array(z.number()).default([]),
   active: z.boolean().optional(),
   avatarUrl: z.string().optional().nullable(),
+}).refine((data) => {
+  // If no pin is provided, it's only valid if we're in edit mode (checked in onSubmit)
+  // But we can at least check length if provided
+  if (data.pin && data.pin.length < 4) return false;
+  return true;
+}, {
+  message: "Mínimo 4 caracteres",
+  path: ["pin"]
 });
 
 export default function AdminUsers() {
@@ -43,20 +52,39 @@ export default function AdminUsers() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", phone: "", pin: "", role: "driver", vehicleId: null, active: true, avatarUrl: null } });
+  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", phone: "", pin: "", role: "driver", vehicleIds: [], active: true, avatarUrl: null } });
 
-  function openCreate() { setEditUser(null); form.reset({ name: "", phone: "", pin: "", role: "driver", vehicleId: null, active: true, avatarUrl: null }); setIsDialogOpen(true); }
-  function openEdit(u: User) { setEditUser(u); form.reset({ name: u.name, phone: u.phone, pin: "", role: u.role as any, vehicleId: u.vehicleId || null, active: u.active, avatarUrl: u.avatarUrl }); setIsDialogOpen(true); }
+  function openCreate() { setEditUser(null); form.reset({ name: "", phone: "", pin: "", role: "driver", vehicleIds: [], active: true, avatarUrl: null }); setIsDialogOpen(true); }
+  function openEdit(u: any) { setEditUser(u); form.reset({ name: u.name, phone: u.phone, pin: "", role: u.role as any, vehicleIds: u.vehicleIds || [], active: u.active, avatarUrl: u.avatarUrl }); setIsDialogOpen(true); }
 
   async function onSubmit(values: z.infer<typeof schema>) {
-    const payload = { ...values, vehicleId: values.vehicleId || null };
+    const payload = { ...values };
+    console.log("Submitting user form with payload:", payload);
     if (editUser) {
-      const updatePayload: any = { name: payload.name, phone: payload.phone, role: payload.role, vehicleId: payload.vehicleId, active: payload.active, avatarUrl: payload.avatarUrl };
+      const updatePayload: any = { 
+        name: payload.name, 
+        phone: payload.phone, 
+        role: payload.role, 
+        vehicleIds: (payload.vehicleIds || []).map(Number), 
+        active: payload.active, 
+        avatarUrl: payload.avatarUrl 
+      };
       if (values.pin) updatePayload.pin = values.pin;
       await updateUser.mutateAsync({ id: editUser.id, data: updatePayload });
       toast({ title: "Utilizador atualizado" });
     } else {
-      await createUser.mutateAsync({ data: { name: payload.name, phone: payload.phone, pin: payload.pin, role: payload.role, vehicleId: payload.vehicleId, avatarUrl: payload.avatarUrl } });
+      if (!values.pin) {
+        form.setError("pin", { message: "Palavra-passe é obrigatória para novos utilizadores" });
+        return;
+      }
+      await createUser.mutateAsync({ data: { 
+        name: payload.name, 
+        phone: payload.phone, 
+        pin: payload.pin, 
+        role: payload.role, 
+        vehicleIds: (payload.vehicleIds || []).map(Number), 
+        avatarUrl: payload.avatarUrl 
+      } as any });
       toast({ title: "Utilizador criado" });
     }
     queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -125,7 +153,14 @@ export default function AdminUsers() {
                 <TableCell>{u.phone}</TableCell>
                 <TableCell><Badge className={u.role === "admin" ? "bg-violet-500/10 text-violet-500 border-violet-500/20" : "bg-blue-500/10 text-blue-500 border-blue-500/20"}>{u.role === "admin" ? "Admin" : "Motorista"}</Badge></TableCell>
                 <TableCell><Badge className={u.active ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-rose-500/10 text-rose-500 border-rose-500/20"}>{u.active ? "Ativo" : "Inativo"}</Badge></TableCell>
-                <TableCell>{u.vehicleId ? vehicles?.find(v => v.id === u.vehicleId)?.plate || u.vehicleId : "-"}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {(u as any).vehicleIds?.length > 0 ? (u as any).vehicleIds.map((vId: number) => {
+                      const v = vehicles?.find(veh => veh.id === vId);
+                      return v ? <Badge key={vId} variant="outline" className="text-[10px] py-0">{v.plate}</Badge> : null;
+                    }) : "-"}
+                  </div>
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(u)}><Edit className="w-4 h-4" /></Button>
@@ -151,7 +186,41 @@ export default function AdminUsers() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Perfil *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="driver">Motorista</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="vehicleId" render={({ field }) => (<FormItem><FormLabel>Viatura</FormLabel><Select onValueChange={v => field.onChange(v === "none" ? null : Number(v))} value={field.value?.toString() || "none"}><FormControl><SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger></FormControl><SelectContent><SelectItem value="none">Nenhuma</SelectItem>{vehicles?.map(v => <SelectItem key={v.id} value={v.id.toString()}>{v.plate}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="vehicleIds" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Viaturas Atribuídas</FormLabel>
+                  <div className="border border-border rounded-lg p-3 space-y-2 max-h-60 overflow-y-auto bg-muted/20 custom-scrollbar">
+                    {vehicles?.map(v => (
+                      <div key={v.id} className="flex items-center gap-2">
+                        <input 
+                          type="checkbox"
+                          id={`v-${v.id}`} 
+                          className="w-4 h-4 cursor-pointer"
+                          checked={field.value?.includes(v.id) || false}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            const current = field.value || [];
+                            if (checked) {
+                              field.onChange([...current, v.id]);
+                            } else {
+                              field.onChange(current.filter(id => id !== v.id));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`v-${v.id}`} className="text-sm font-medium leading-none cursor-pointer">
+                          {v.plate} <span className="text-muted-foreground text-xs font-normal">({v.brand} {v.model})</span>
+                        </label>
+                      </div>
+                    ))}
+                    {(!vehicles || vehicles.length === 0) && <p className="text-xs text-muted-foreground">Nenhuma viatura disponível</p>}
+                  </div>
+                  {/* Debug info para o utilizador ver se está a selecionar */}
+                  <div className="text-xs text-muted-foreground mt-2">
+                    Viaturas selecionadas (internamente): {field.value?.length ? field.value.join(", ") : "Nenhuma"}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )} />
               </div>
               {editUser && (
                 <FormField control={form.control} name="active" render={({ field }) => (

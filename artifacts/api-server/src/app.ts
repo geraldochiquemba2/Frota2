@@ -43,6 +43,8 @@ app.use(session({
   },
 }));
 
+import debugRoutes from "./routes/debug";
+app.use("/api/debug", debugRoutes);
 app.use("/api", router);
 
 const frontendPath = path.resolve(import.meta.dirname, "../../fleet-manager/dist/public");

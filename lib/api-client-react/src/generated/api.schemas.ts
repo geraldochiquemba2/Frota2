@@ -36,6 +36,7 @@ export interface User {
   role: UserRole;
   active: boolean;
   vehicleId?: number | null;
+  vehicleIds?: number[];
   avatarUrl?: string | null;
   createdAt: string;
 }
@@ -59,6 +60,7 @@ export interface CreateUserRequest {
   pin: string;
   role: CreateUserRequestRole;
   vehicleId?: number | null;
+  vehicleIds?: number[];
   avatarUrl?: string | null;
 }
 
@@ -76,6 +78,7 @@ export interface UpdateUserRequest {
   pin?: string;
   role?: UpdateUserRequestRole;
   vehicleId?: number | null;
+  vehicleIds?: number[];
   active?: boolean;
   avatarUrl?: string | null;
 }

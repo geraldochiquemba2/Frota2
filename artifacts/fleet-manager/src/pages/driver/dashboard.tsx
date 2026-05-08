@@ -2,6 +2,7 @@ import React from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useListTrips, useListVehicles } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Clock, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
@@ -13,7 +14,7 @@ export default function DriverDashboard() {
   // @ts-expect-error queryKey is provided internally
   const { data: trips } = useListTrips({ query: { refetchInterval: 5000 } });
   
-  const assignedVehicle = vehicles?.find(v => v.assignedDriverId == user?.id);
+  const myVehicles = vehicles?.filter(v => (v as any).assignedDriverId === user?.id || v.id === user?.vehicleId) || [];
   const myTrips = trips?.filter(t => t.driverId === user?.id) || [];
   
   const activeTrip = myTrips.find(t => t.status === "in_progress");
@@ -21,27 +22,40 @@ export default function DriverDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Current Vehicle Card */}
-      {assignedVehicle ? (
-        <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20 overflow-hidden relative">
-          <div className="absolute right-0 top-0 w-32 h-32 bg-primary/10 rounded-bl-full" />
-          <CardContent className="p-6">
-            <h3 className="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Viatura Atual</h3>
-            <div className="flex items-end gap-4 mt-2">
-              <div>
-                <p className="text-3xl font-display font-bold font-mono text-foreground">{assignedVehicle.plate}</p>
-                <p className="text-muted-foreground">{assignedVehicle.brand} {assignedVehicle.model}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-dashed bg-muted/10">
-          <CardContent className="p-6 text-center text-muted-foreground">
-            Nenhuma viatura atribuída de momento.
-          </CardContent>
-        </Card>
-      )}
+      {/* Current Vehicles */}
+      <div>
+        <h2 className="text-lg font-display font-bold mb-3 flex items-center gap-2">
+          Minhas Viaturas
+          <Badge variant="outline" className="ml-auto">{myVehicles.length}</Badge>
+        </h2>
+        
+        {myVehicles.length > 0 ? (
+          <div className="grid gap-4">
+            {myVehicles.map(vehicle => (
+              <Card key={vehicle.id} className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20 overflow-hidden relative">
+                <div className="absolute right-0 top-0 w-24 h-24 bg-primary/10 rounded-bl-full" />
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <p className="text-2xl font-display font-bold font-mono text-foreground">{vehicle.plate}</p>
+                      <p className="text-sm text-muted-foreground">{vehicle.brand} {vehicle.model}</p>
+                    </div>
+                    <Badge variant="secondary" className="ml-auto capitalize">
+                      {vehicle.status === 'active' ? 'Ativa' : 'Manutenção'}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="border-dashed bg-muted/10">
+            <CardContent className="p-6 text-center text-muted-foreground">
+              Nenhuma viatura atribuída de momento.
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Active Trip */}
       {activeTrip && (
