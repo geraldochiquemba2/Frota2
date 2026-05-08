@@ -279,9 +279,17 @@ export default function AdminTrips() {
                     <Select onValueChange={(v) => {
                       const id = v === "null" ? null : parseInt(v);
                       field.onChange(id);
+                      
+                      // Auto-selecionar a viatura se o motorista tiver apenas uma
                       if (id) {
-                        const drv = drivers.find(d => d.id === id);
-                        if (drv && drv.vehicleId) form.setValue("vehicleId", drv.vehicleId);
+                        const driverVehicles = vehicles?.filter(veh => (veh as any).assignedDriverId === id) || [];
+                        if (driverVehicles.length === 1) {
+                          form.setValue("vehicleId", driverVehicles[0].id);
+                        } else {
+                          form.setValue("vehicleId", null);
+                        }
+                      } else {
+                        form.setValue("vehicleId", null);
                       }
                     }} value={field.value?.toString() || "null"}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Selecionar motorista" /></SelectTrigger></FormControl>
@@ -292,19 +300,26 @@ export default function AdminTrips() {
                     </Select>
                   <FormMessage/></FormItem>
                 )}/>
-                <FormField control={form.control} name="vehicleId" render={({ field }) => (
-                  <FormItem><FormLabel>Viatura</FormLabel>
-                    <Select onValueChange={(v) => field.onChange(v ? parseInt(v) : null)} value={field.value?.toString() || ""}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selecionar viatura" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Não atribuída</SelectItem>
-                        {vehicles?.filter(v => v.status === 'active').map(v => 
-                          <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  <FormMessage/></FormItem>
-                )}/>
+                <FormField control={form.control} name="vehicleId" render={({ field }) => {
+                  const selectedDriverId = form.watch("driverId");
+                  const availableVehicles = selectedDriverId 
+                    ? vehicles?.filter(v => (v as any).assignedDriverId === selectedDriverId || v.id === field.value)
+                    : vehicles;
+
+                  return (
+                    <FormItem><FormLabel>Viatura</FormLabel>
+                      <Select onValueChange={(v) => field.onChange(v === "null" ? null : parseInt(v))} value={field.value?.toString() || "null"}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecionar viatura" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="null">Não atribuída</SelectItem>
+                          {availableVehicles?.filter(v => v.status === 'active').map(v => 
+                            <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    <FormMessage/></FormItem>
+                  );
+                }}/>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

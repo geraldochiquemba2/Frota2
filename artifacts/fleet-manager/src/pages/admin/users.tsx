@@ -23,19 +23,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const schema = z.object({
   name: z.string().min(1, "Obrigatório"),
   phone: z.string().min(9, "Número inválido"),
-  pin: z.string().optional().or(z.literal("")),
   role: z.enum(["admin", "driver"]),
   vehicleIds: z.array(z.number()).default([]),
   active: z.boolean().optional(),
   avatarUrl: z.string().optional().nullable(),
-}).refine((data) => {
-  // If no pin is provided, it's only valid if we're in edit mode (checked in onSubmit)
-  // But we can at least check length if provided
-  if (data.pin && data.pin.length < 4) return false;
-  return true;
-}, {
-  message: "Mínimo 4 caracteres",
-  path: ["pin"]
 });
 
 export default function AdminUsers() {
@@ -52,10 +43,10 @@ export default function AdminUsers() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", phone: "", pin: "", role: "driver", vehicleIds: [], active: true, avatarUrl: null } });
+  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { name: "", phone: "", role: "driver", vehicleIds: [], active: true, avatarUrl: null } });
 
-  function openCreate() { setEditUser(null); form.reset({ name: "", phone: "", pin: "", role: "driver", vehicleIds: [], active: true, avatarUrl: null }); setIsDialogOpen(true); }
-  function openEdit(u: any) { setEditUser(u); form.reset({ name: u.name, phone: u.phone, pin: "", role: u.role as any, vehicleIds: u.vehicleIds || [], active: u.active, avatarUrl: u.avatarUrl }); setIsDialogOpen(true); }
+  function openCreate() { setEditUser(null); form.reset({ name: "", phone: "", role: "driver", vehicleIds: [], active: true, avatarUrl: null }); setIsDialogOpen(true); }
+  function openEdit(u: any) { setEditUser(u); form.reset({ name: u.name, phone: u.phone, role: u.role as any, vehicleIds: u.vehicleIds || [], active: u.active, avatarUrl: u.avatarUrl }); setIsDialogOpen(true); }
 
   async function onSubmit(values: z.infer<typeof schema>) {
     const payload = { ...values };
@@ -69,21 +60,16 @@ export default function AdminUsers() {
         active: payload.active, 
         avatarUrl: payload.avatarUrl 
       };
-      if (values.pin) updatePayload.pin = values.pin;
       await updateUser.mutateAsync({ id: editUser.id, data: updatePayload });
       toast({ title: "Utilizador atualizado" });
     } else {
-      if (!values.pin) {
-        form.setError("pin", { message: "Palavra-passe é obrigatória para novos utilizadores" });
-        return;
-      }
       await createUser.mutateAsync({ data: { 
         name: payload.name, 
         phone: payload.phone, 
-        pin: payload.pin, 
         role: payload.role, 
         vehicleIds: (payload.vehicleIds || []).map(Number), 
-        avatarUrl: payload.avatarUrl 
+        avatarUrl: payload.avatarUrl,
+        pin: "1234" // Default pin if removed from UI
       } as any });
       toast({ title: "Utilizador criado" });
     }
@@ -182,10 +168,9 @@ export default function AdminUsers() {
               <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nome *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Telefone *</FormLabel><FormControl><Input placeholder="+244 9XX XXX XXX" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="pin" render={({ field }) => (<FormItem><FormLabel>Palavra-passe {editUser ? "(opcional)" : "*"}</FormLabel><FormControl><Input type="password" placeholder="Mínimo 4 caracteres" {...field} /></FormControl><FormMessage /></FormItem>)} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="role" render={({ field }) => (<FormItem><FormLabel>Perfil *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="driver">Motorista</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+              </div>
+
               <FormField control={form.control} name="vehicleIds" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Viaturas Atribuídas</FormLabel>
@@ -214,14 +199,9 @@ export default function AdminUsers() {
                     ))}
                     {(!vehicles || vehicles.length === 0) && <p className="text-xs text-muted-foreground">Nenhuma viatura disponível</p>}
                   </div>
-                  {/* Debug info para o utilizador ver se está a selecionar */}
-                  <div className="text-xs text-muted-foreground mt-2">
-                    Viaturas selecionadas (internamente): {field.value?.length ? field.value.join(", ") : "Nenhuma"}
-                  </div>
                   <FormMessage />
                 </FormItem>
               )} />
-              </div>
               {editUser && (
                 <FormField control={form.control} name="active" render={({ field }) => (
                   <FormItem className="flex items-center gap-3">

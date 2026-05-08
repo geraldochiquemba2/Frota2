@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useListTrips, useUpdateTrip, useCreateTrip, Trip } from "@workspace/api-client-react";
+import { useListTrips, useUpdateTrip, useCreateTrip, useListVehicles, Trip } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,12 +15,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const createTripSchema = z.object({
   title: z.string().min(1, "Título obrigatório"),
   origin: z.string().min(1, "Origem obrigatória"),
   destination: z.string().min(1, "Destino obrigatório"),
   scheduledStart: z.string().min(1, "Data obrigatória"),
+  vehicleId: z.coerce.number().min(1, "Deve selecionar uma viatura"),
 });
 
 const startTripSchema = z.object({
@@ -34,6 +36,7 @@ const endTripSchema = z.object({
 export default function DriverTrips() {
   const { user } = useAuth();
   const { data: trips } = useListTrips();
+  const { data: vehicles } = useListVehicles();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -42,10 +45,31 @@ export default function DriverTrips() {
   const [endingTrip, setEndingTrip] = useState<Trip | null>(null);
   const [cancellingTrip, setCancellingTrip] = useState<Trip | null>(null);
 
+  // Memoizar para evitar loop de re-render
+  const myVehicles = React.useMemo(() => {
+    return vehicles?.filter(v => 
+      (v as any).assignedDriverId === user?.id || v.id === user?.vehicleId
+    ) || [];
+  }, [vehicles, user?.id, user?.vehicleId]);
+
   const createForm = useForm<z.infer<typeof createTripSchema>>({
     resolver: zodResolver(createTripSchema),
-    defaultValues: { title: "", origin: "", destination: "", scheduledStart: new Date().toISOString().split('T')[0] }
+    defaultValues: { 
+      title: "", 
+      origin: "", 
+      destination: "", 
+      scheduledStart: new Date().toISOString().split('T')[0],
+      vehicleId: myVehicles.length === 1 ? myVehicles[0].id : undefined
+    }
   });
+
+  // Atualizar vehicleId se myVehicles carregar depois
+  React.useEffect(() => {
+    const currentVehicleId = createForm.getValues("vehicleId");
+    if (myVehicles.length === 1 && !currentVehicleId) {
+      createForm.setValue("vehicleId", myVehicles[0].id);
+    }
+  }, [myVehicles, createForm]);
 
   const startForm = useForm<z.infer<typeof startTripSchema>>({ resolver: zodResolver(startTripSchema) });
   const endForm = useForm<z.infer<typeof endTripSchema>>({ resolver: zodResolver(endTripSchema) });
@@ -55,6 +79,7 @@ export default function DriverTrips() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["/api/trips"] });
         setIsCreateOpen(false);
+        createForm.reset();
         toast({ title: "Viagem criada com sucesso" });
       }
     }
@@ -82,7 +107,6 @@ export default function DriverTrips() {
         ...values,
         scheduledStart: new Date(values.scheduledStart).toISOString(),
         driverId: user?.id,
-        vehicleId: user?.vehicleId,
         status: "pending"
       } as any
     });
@@ -231,6 +255,31 @@ export default function DriverTrips() {
               <FormField control={createForm.control} name="title" render={({ field }) => (
                 <FormItem><FormLabel>Título</FormLabel><FormControl><Input {...field} placeholder="Ex: Rota Luanda-Benguela" /></FormControl><FormMessage/></FormItem>
               )}/>
+              
+              <FormField control={createForm.control} name="vehicleId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Viatura</FormLabel>
+                  <Select 
+                    onValueChange={(v) => field.onChange(parseInt(v))} 
+                    value={field.value?.toString() || ""}
+                    disabled={myVehicles.length <= 1}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a viatura" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {myVehicles.map(v => (
+                        <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {myVehicles.length === 0 && <p className="text-xs text-destructive mt-1">Não tem nenhuma viatura atribuída para realizar viagens.</p>}
+                  <FormMessage/>
+                </FormItem>
+              )}/>
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={createForm.control} name="origin" render={({ field }) => (
                   <FormItem><FormLabel>Origem</FormLabel><FormControl><Input {...field} placeholder="Cidade/Local" /></FormControl><FormMessage/></FormItem>
@@ -243,7 +292,7 @@ export default function DriverTrips() {
                 <FormItem><FormLabel>Data Prevista</FormLabel><FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl><FormMessage/></FormItem>
               )}/>
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={createMutation.isPending}>Guardar Viagem</Button>
+                <Button type="submit" disabled={createMutation.isPending || myVehicles.length === 0}>Guardar Viagem</Button>
               </div>
             </form>
           </Form>
