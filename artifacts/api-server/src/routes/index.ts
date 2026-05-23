@@ -11,6 +11,7 @@ import suppliersRouter from "./suppliers";
 import financeRouter from "./finance";
 import reportsRouter from "./reports";
 import uploadRouter from "./upload";
+import invoicesRouter from "./invoices";
 import { requireAdmin, requireAuth } from "../middlewares/rbac";
 
 const router: IRouter = Router();
@@ -32,6 +33,7 @@ router.use("/finance", requireAdmin, financeRouter);
 router.use("/reports", requireAdmin, reportsRouter);
 router.use("/dashboard", requireAdmin, reportsRouter);
 router.use("/upload", uploadRouter);
+router.use("/invoices", requireAdmin, invoicesRouter);
 
 // Role-mixed routes (internal logic handles roles)
 router.use("/trips", tripsRouter);

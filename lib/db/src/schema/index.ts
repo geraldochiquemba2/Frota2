@@ -6,3 +6,4 @@ export * from "./suppliers";
 export * from "./maintenance";
 export * from "./inventory";
 export * from "./finance";
+export * from "./invoices";

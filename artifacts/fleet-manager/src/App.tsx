@@ -18,6 +18,7 @@ import AdminInventory from "@/pages/admin/inventory";
 import AdminUsers from "@/pages/admin/users";
 import AdminSuppliers from "@/pages/admin/suppliers";
 import AdminFinance from "@/pages/admin/finance";
+import AdminInvoices from "@/pages/admin/invoices";
 import AdminReports from "@/pages/admin/reports";
 import DriverDashboard from "@/pages/driver/dashboard";
 import DriverTrips from "@/pages/driver/trips";
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/admin/users">{() => <ProtectedRoute component={AdminUsers} allowedRole="admin" layout={AdminLayout} />}</Route>
       <Route path="/admin/suppliers">{() => <ProtectedRoute component={AdminSuppliers} allowedRole="admin" layout={AdminLayout} />}</Route>
       <Route path="/admin/finance">{() => <ProtectedRoute component={AdminFinance} allowedRole="admin" layout={AdminLayout} />}</Route>
+      <Route path="/admin/invoices">{() => <ProtectedRoute component={AdminInvoices} allowedRole="admin" layout={AdminLayout} />}</Route>
       <Route path="/admin/reports">{() => <ProtectedRoute component={AdminReports} allowedRole="admin" layout={AdminLayout} />}</Route>
 
       {/* Driver Routes */}

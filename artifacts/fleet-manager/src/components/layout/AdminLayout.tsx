@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth-context";
 import { 
   LayoutDashboard, Truck, Map, Droplets, Wrench, 
-  Package, Users, DollarSign, FileText, LogOut, Menu, X, Users2
+  Package, Users, DollarSign, FileText, LogOut, Menu, X, Users2, Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +18,7 @@ const navItems = [
   { href: "/admin/users", label: "Utilizadores", icon: Users2 },
   { href: "/admin/suppliers", label: "Fornecedores", icon: Users },
   { href: "/admin/finance", label: "Finanças", icon: DollarSign },
+  { href: "/admin/invoices", label: "Faturas", icon: Receipt },
   { href: "/admin/reports", label: "Relatórios", icon: FileText },
 ];
 
