@@ -12,6 +12,8 @@ export const invoicesTable = pgTable("invoices", {
   supplierId: integer("supplier_id"),
   documentUrl: text("document_url"), // URL/path to the uploaded file
   notes: text("notes"),
+  vehicleId: integer("vehicle_id"),
+  driverId: integer("driver_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

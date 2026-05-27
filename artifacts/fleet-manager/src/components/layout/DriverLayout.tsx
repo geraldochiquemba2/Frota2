@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth-context";
-import { Map, Truck, LogOut, Home } from "lucide-react";
+import { Map, Truck, LogOut, Home, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function DriverLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +12,7 @@ export function DriverLayout({ children }: { children: React.ReactNode }) {
     { href: "/driver/dashboard", label: "Início", icon: Home },
     { href: "/driver/trips", label: "Viagens", icon: Map },
     { href: "/driver/vehicle", label: "Viatura", icon: Truck },
+    { href: "/driver/invoices", label: "Faturas", icon: FileText },
   ];
 
   return (

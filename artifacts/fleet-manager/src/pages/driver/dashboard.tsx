@@ -1,11 +1,13 @@
 import React from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useListTrips, useListVehicles } from "@workspace/api-client-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Clock, ChevronRight } from "lucide-react";
+import { MapPin, Calendar, Clock, ChevronRight, TrendingUp, Navigation } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
+import { formatNumber } from "@/lib/utils";
 
 export default function DriverDashboard() {
   const { user } = useAuth();
@@ -19,6 +21,25 @@ export default function DriverDashboard() {
   
   const activeTrip = myTrips.find(t => t.status === "in_progress");
   const upcomingTrips = myTrips.filter(t => t.status === "pending").sort((a,b) => new Date(a.scheduledStart).getTime() - new Date(b.scheduledStart).getTime());
+
+  // Generate chart data for recently completed trips
+  const completedTrips = myTrips
+    .filter(t => t.status === "completed")
+    .sort((a, b) => new Date(b.actualEnd || "").getTime() - new Date(a.actualEnd || "").getTime())
+    .slice(0, 6)
+    .reverse();
+
+  const chartData = completedTrips.map(t => {
+    const distance = t.distance || (t.endMileage && t.startMileage ? t.endMileage - t.startMileage : 0);
+    return {
+      name: t.title.length > 12 ? t.title.substring(0, 12) + "..." : t.title,
+      "Distância (km)": Number(distance) || 0
+    };
+  });
+
+  const totalKmRun = myTrips
+    .filter(t => t.status === "completed")
+    .reduce((acc, t) => acc + (Number(t.distance) || (t.endMileage && t.startMileage ? t.endMileage - t.startMileage : 0)), 0);
 
   return (
     <div className="space-y-6">
@@ -40,8 +61,12 @@ export default function DriverDashboard() {
                       <p className="text-2xl font-display font-bold font-mono text-foreground">{vehicle.plate}</p>
                       <p className="text-sm text-muted-foreground">{vehicle.brand} {vehicle.model}</p>
                     </div>
-                    <Badge variant="secondary" className="ml-auto capitalize">
-                      {vehicle.status === 'active' ? 'Ativa' : 'Manutenção'}
+                    <Badge variant={
+                      (vehicle.status as any) === 'active' ? 'secondary' : 
+                      (vehicle.status as any) === 'needs_maintenance' ? 'destructive' : 'outline'
+                    } className="ml-auto capitalize">
+                      {(vehicle.status as any) === 'active' ? 'Ativa' : 
+                       (vehicle.status as any) === 'needs_maintenance' ? 'Avaria Reportada' : 'Manutenção'}
                     </Badge>
                   </div>
                 </CardContent>
@@ -83,6 +108,48 @@ export default function DriverDashboard() {
           </Link>
         </div>
       )}
+
+      {/* Performance Summary & Chart */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-1 bg-gradient-to-br from-primary/10 to-card border-border flex flex-col justify-center p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-primary/20 rounded-lg text-primary">
+              <Navigation className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-medium text-muted-foreground">Quilómetros Totais</p>
+          </div>
+          <h3 className="text-3xl font-display font-bold font-mono text-primary">{formatNumber(totalKmRun, 0)} km</h3>
+          <p className="text-xs text-muted-foreground mt-1">Percorridos após a conclusão de todas as viagens atribuídas.</p>
+        </Card>
+
+        <Card className="md:col-span-2 bg-card border-border overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              km Percorridos por Viagem Recente
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-[180px] p-2">
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                  <RechartsTooltip 
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                  />
+                  <Bar dataKey="Distância (km)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                Sem histórico de viagens completadas.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Upcoming Trips */}
       <div>

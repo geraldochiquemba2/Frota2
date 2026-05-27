@@ -7,12 +7,26 @@ import { requireAdmin, requireAuth } from "../middlewares/rbac";
 const router: IRouter = Router();
 
 router.get("/", requireAuth, async (req, res) => {
-  const records = await db.select().from(invoicesTable).orderBy(desc(invoicesTable.date));
+  const sessionUserId = (req.session as any)?.userId;
+  const sessionRole = (req.session as any)?.role;
+  
+  let records;
+  if (sessionRole === "driver") {
+    records = await db.select().from(invoicesTable).where(eq(invoicesTable.driverId, sessionUserId)).orderBy(desc(invoicesTable.date));
+  } else {
+    records = await db.select().from(invoicesTable).orderBy(desc(invoicesTable.date));
+  }
   res.json(records);
 });
 
 router.post("/", requireAuth, async (req, res) => {
-  const { invoiceNumber, type, referenceId, amount, date, supplierId, documentUrl, notes } = req.body;
+  const { invoiceNumber, type, referenceId, amount, date, supplierId, documentUrl, notes, vehicleId, driverId } = req.body;
+  const sessionUserId = (req.session as any)?.userId;
+  const sessionRole = (req.session as any)?.role;
+  
+  const finalDriverId = sessionRole === "driver" ? sessionUserId : (driverId ? Number(driverId) : null);
+  const finalVehicleId = vehicleId ? Number(vehicleId) : null;
+
   const [r] = await db.insert(invoicesTable).values({
     invoiceNumber,
     type,
@@ -22,6 +36,8 @@ router.post("/", requireAuth, async (req, res) => {
     supplierId: supplierId || null,
     documentUrl: documentUrl || null,
     notes: notes || null,
+    vehicleId: finalVehicleId,
+    driverId: finalDriverId,
   }).returning();
   res.status(201).json(r);
 });

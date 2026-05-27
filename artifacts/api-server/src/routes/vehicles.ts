@@ -88,6 +88,38 @@ router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
   });
 });
 
+router.put("/:id/driver-update", requireAuth, async (req, res) => {
+  const vehicleId = Number(req.params.id);
+  const { status, mileage } = req.body;
+  
+  const [currentV] = await db.select().from(vehiclesTable).where(eq(vehiclesTable.id, vehicleId));
+  if (!currentV) { res.status(404).json({ error: "Viatura não encontrada" }); return; }
+
+  const sessionRole = (req.session as any)?.role;
+  const sessionUserId = (req.session as any)?.userId;
+  
+  if (sessionRole !== "admin" && currentV.assignedDriverId !== sessionUserId) {
+    res.status(403).json({ error: "Acesso negado: Viatura não atribuída a este motorista" });
+    return;
+  }
+
+  const updateData: any = {};
+  if (status !== undefined) updateData.status = status;
+  if (mileage !== undefined) updateData.mileage = Number(mileage);
+
+  const [v] = await db.update(vehiclesTable).set(updateData).where(eq(vehiclesTable.id, vehicleId)).returning();
+  
+  const drivers = await db.select().from(usersTable).where(eq(usersTable.id, v.assignedDriverId || 0));
+  res.json({
+    id: v.id, plate: v.plate, brand: v.brand, model: v.model, year: v.year, 
+    status: v.status, mileage: v.mileage, fuelType: v.fuelType, 
+    assignedDriverId: v.assignedDriverId,
+    assignedDrivers: drivers.map(d => ({ id: d.id, name: d.name })),
+    assignedDriverName: drivers.map(d => d.name).join(", ") || null,
+    createdAt: v.createdAt.toISOString() 
+  });
+});
+
 router.delete("/:id", requireAuth, requireAdmin, async (req, res) => {
   const vehicleId = Number(req.params.id);
   // Clear driver link

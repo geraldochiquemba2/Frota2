@@ -39,6 +39,8 @@ const schema = z.object({
     unitCost: z.coerce.number().optional(),
     quantity: z.coerce.number().min(0.01)
   })).optional().default([]),
+  nextMaintenanceDate: z.string().optional().nullable(),
+  nextMaintenanceType: z.string().optional().nullable(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -71,7 +73,7 @@ export default function AdminMaintenance() {
 
   function openCreate() {
     setEditItem(null);
-    form.reset({ vehicleId: 0, type: "", description: "", date: new Date().toISOString().slice(0, 10), status: "scheduled", cost: null, mileage: null, supplierId: null, notes: "", partsUsed: [] });
+    form.reset({ vehicleId: 0, type: "", description: "", date: new Date().toISOString().slice(0, 10), status: "scheduled", cost: null, mileage: null, supplierId: null, notes: "", partsUsed: [], nextMaintenanceDate: null, nextMaintenanceType: "" });
     setIsDialogOpen(true);
   }
 
@@ -83,13 +85,18 @@ export default function AdminMaintenance() {
       cost: item.cost || null, mileage: item.mileage || null,
       supplierId: item.supplierId || null, notes: item.notes || "",
       partsUsed: item.partsUsed || [],
+      nextMaintenanceDate: null,
+      nextMaintenanceType: ""
     });
     setIsDialogOpen(true);
   }
 
   async function onSubmit(values: FormValues) {
     const payload = { 
-      ...values, 
+      vehicleId: values.vehicleId,
+      type: values.type,
+      description: values.description,
+      status: values.status,
       date: new Date(values.date).toISOString(), 
       cost: values.cost || null, 
       mileage: values.mileage || null, 
@@ -114,11 +121,43 @@ export default function AdminMaintenance() {
       }) || [] 
     };
     if (editItem) {
-      await updateMutation.mutateAsync({ id: editItem.id, data: payload });
-      toast({ title: "Manutenção atualizada" });
+      await updateMutation.mutateAsync({ id: editItem.id, data: payload as any });
+      
+      // Auto schedule next maintenance if completed
+      if (values.status === "completed" && values.nextMaintenanceDate) {
+        await createMutation.mutateAsync({
+          data: {
+            vehicleId: values.vehicleId,
+            type: values.nextMaintenanceType || "Revisão Geral",
+            description: `Próxima revisão agendada automaticamente após conclusão da revisão #${editItem.id}`,
+            date: new Date(values.nextMaintenanceDate).toISOString(),
+            status: "scheduled",
+            partsUsed: []
+          } as any
+        });
+        toast({ title: "Manutenção concluída e próxima agendada com sucesso" });
+      } else {
+        toast({ title: "Manutenção atualizada" });
+      }
     } else {
-      await createMutation.mutateAsync({ data: payload });
-      toast({ title: "Manutenção criada" });
+      const created = await createMutation.mutateAsync({ data: payload as any });
+      
+      // Auto schedule next maintenance if completed
+      if (values.status === "completed" && values.nextMaintenanceDate) {
+        await createMutation.mutateAsync({
+          data: {
+            vehicleId: values.vehicleId,
+            type: values.nextMaintenanceType || "Revisão Geral",
+            description: `Próxima revisão agendada automaticamente após conclusão da revisão #${created.id}`,
+            date: new Date(values.nextMaintenanceDate).toISOString(),
+            status: "scheduled",
+            partsUsed: []
+          } as any
+        });
+        toast({ title: "Manutenção criada e próxima agendada com sucesso" });
+      } else {
+        toast({ title: "Manutenção criada" });
+      }
     }
     queryClient.invalidateQueries({ queryKey: ["/api/maintenance"] });
     queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
@@ -261,6 +300,32 @@ export default function AdminMaintenance() {
               <FormField control={form.control} name="notes" render={({ field }) => (
                 <FormItem><FormLabel>Notas</FormLabel><FormControl><Input placeholder="Observações..." {...field} value={field.value || ""} /></FormControl><FormMessage /></FormItem>
               )} />
+              
+              {/* Conditional scheduling section */}
+              {form.watch("status") === "completed" && (
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-3 mt-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1">
+                    📅 Agendar Próxima Revisão / Manutenção
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField control={form.control} name="nextMaintenanceDate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Próxima Data</FormLabel>
+                        <FormControl><Input type="date" {...field} value={field.value || ""} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="nextMaintenanceType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de Serviço</FormLabel>
+                        <FormControl><Input placeholder="Ex: Troca de Óleo / Filtros" {...field} value={field.value || ""} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-3 pt-2 border-t mt-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-sm font-semibold">Peças / Consumíveis</h3>

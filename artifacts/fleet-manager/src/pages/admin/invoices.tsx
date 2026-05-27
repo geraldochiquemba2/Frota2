@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FileText, Upload, Download } from "lucide-react";
+import { Plus, Trash2, FileText, Upload, Download, Filter, Car, User } from "lucide-react";
 import { format } from "date-fns";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -23,6 +23,8 @@ const invoiceSchema = z.object({
   date: z.string().min(1, "Data é obrigatória"),
   referenceId: z.coerce.number().optional().nullable(),
   supplierId: z.coerce.number().optional().nullable(),
+  vehicleId: z.coerce.number().optional().nullable(),
+  driverId: z.coerce.number().optional().nullable(),
   notes: z.string().optional(),
 });
 
@@ -32,6 +34,10 @@ export default function AdminInvoices() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Filters State
+  const [vehicleFilter, setVehicleFilter] = useState<string>("all");
+  const [driverFilter, setDriverFilter] = useState<string>("all");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -45,13 +51,33 @@ export default function AdminInvoices() {
     }
   });
 
+  const { data: vehicles } = useQuery<any[]>({
+    queryKey: ["/api/vehicles"],
+    queryFn: async () => {
+      const res = await fetch("/api/vehicles");
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
+  const { data: users } = useQuery<any[]>({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users");
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: { 
       invoiceNumber: "", 
       type: "fueling", 
       amount: 0, 
-      date: new Date().toISOString().split('T')[0] 
+      date: new Date().toISOString().split('T')[0],
+      vehicleId: null,
+      driverId: null
     }
   });
 
@@ -123,6 +149,12 @@ export default function AdminInvoices() {
     createMutation.mutate({ ...values, documentUrl });
   };
 
+  const filteredInvoices = invoices?.filter((inv: any) => {
+    const matchVehicle = vehicleFilter === "all" || inv.vehicleId === Number(vehicleFilter);
+    const matchDriver = driverFilter === "all" || inv.driverId === Number(driverFilter);
+    return matchVehicle && matchDriver;
+  }) || [];
+
   if (isLoading) return <Skeleton className="w-full h-96 rounded-2xl" />;
 
   return (
@@ -130,11 +162,52 @@ export default function AdminInvoices() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-display font-bold">Faturas</h1>
-          <p className="text-muted-foreground">Gestão de faturas de abastecimento e manutenção</p>
+          <p className="text-muted-foreground">Gestão de faturas de abastecimento e manutenção de toda a frota</p>
         </div>
         <Button onClick={() => { form.reset(); setSelectedFile(null); setIsDialogOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" /> Nova Fatura
         </Button>
+      </div>
+
+      {/* Filters Row */}
+      <div className="flex flex-wrap gap-4 bg-card p-4 rounded-2xl border border-border shadow-sm items-center">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mr-2">
+          <Filter className="w-4 h-4" /> Filtros Rápidos:
+        </div>
+        
+        <div className="w-48">
+          <Select value={vehicleFilter} onValueChange={setVehicleFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todas as viaturas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as viaturas</SelectItem>
+              {vehicles?.map(v => (
+                <SelectItem key={v.id} value={v.id.toString()}>{v.plate}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-48">
+          <Select value={driverFilter} onValueChange={setDriverFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todos os motoristas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os motoristas</SelectItem>
+              {users?.filter(u => u.role === "driver").map(u => (
+                <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {(vehicleFilter !== "all" || driverFilter !== "all") && (
+          <Button variant="ghost" size="sm" onClick={() => { setVehicleFilter("all"); setDriverFilter("all"); }} className="text-destructive">
+            Limpar Filtros
+          </Button>
+        )}
       </div>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
@@ -143,6 +216,8 @@ export default function AdminInvoices() {
             <TableRow>
               <TableHead>Data</TableHead>
               <TableHead>Número</TableHead>
+              <TableHead>Viatura</TableHead>
+              <TableHead>Motorista</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Montante</TableHead>
               <TableHead className="text-center">Documento</TableHead>
@@ -150,43 +225,60 @@ export default function AdminInvoices() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {invoices?.length === 0 && (
+            {filteredInvoices.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  Nenhuma fatura registada.
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  Nenhuma fatura encontrada.
                 </TableCell>
               </TableRow>
             )}
-            {invoices?.map((inv: any) => (
-              <TableRow key={inv.id}>
-                <TableCell className="text-muted-foreground text-sm">{format(new Date(inv.date), "dd/MM/yyyy")}</TableCell>
-                <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
-                <TableCell>
-                  <span className="flex items-center text-xs font-semibold px-2 py-1 rounded w-fit bg-secondary text-secondary-foreground">
-                    {inv.type === 'fueling' ? 'Abastecimento' : 'Manutenção'}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right font-mono font-bold text-foreground">
-                  {formatNumber(inv.amount, 2)} Kz
-                </TableCell>
-                <TableCell className="text-center">
-                  {inv.documentUrl ? (
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={inv.documentUrl} target="_blank" rel="noopener noreferrer">
-                        <Download className="w-4 h-4 mr-2" /> Ver Fatura
-                      </a>
+            {filteredInvoices.map((inv: any) => {
+              const matchedVehicle = vehicles?.find(v => v.id === inv.vehicleId);
+              const matchedDriver = users?.find(u => u.id === inv.driverId);
+              return (
+                <TableRow key={inv.id}>
+                  <TableCell className="text-muted-foreground text-sm">{inv.date ? format(new Date(inv.date), "dd/MM/yyyy") : "-"}</TableCell>
+                  <TableCell className="font-medium font-mono">{inv.invoiceNumber}</TableCell>
+                  <TableCell>
+                    {matchedVehicle ? (
+                      <span className="font-semibold font-mono text-sm bg-muted px-2 py-0.5 rounded border border-border">
+                        {matchedVehicle.plate}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm font-medium">
+                    {matchedDriver ? matchedDriver.name : <span className="text-xs text-muted-foreground">Admin / Sede</span>}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded w-fit capitalize
+                      ${inv.type === 'fueling' ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                      {inv.type === 'fueling' ? 'Abastecimento' : 'Manutenção'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right font-mono font-bold text-foreground">
+                    {formatNumber(inv.amount, 2)} Kz
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {inv.documentUrl ? (
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={inv.documentUrl} target="_blank" rel="noopener noreferrer">
+                          <Download className="w-4 h-4 mr-2" /> Ver Fatura
+                        </a>
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sem anexo</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => confirm("Eliminar fatura?") && deleteMutation.mutate(inv.id)}>
+                      <Trash2 className="w-4 h-4 text-red-400" />
                     </Button>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Sem anexo</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => confirm("Eliminar fatura?") && deleteMutation.mutate(inv.id)}>
-                    <Trash2 className="w-4 h-4 text-red-400" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -205,6 +297,40 @@ export default function AdminInvoices() {
                 )}/>
               </div>
               
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="vehicleId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Viatura</FormLabel>
+                    <Select onValueChange={(v) => field.onChange(v === "none" ? null : Number(v))} value={field.value?.toString() || "none"}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhuma</SelectItem>
+                        {vehicles?.map(v => (
+                          <SelectItem key={v.id} value={v.id.toString()}>{v.plate}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}/>
+
+                <FormField control={form.control} name="driverId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Motorista</FormLabel>
+                    <Select onValueChange={(v) => field.onChange(v === "none" ? null : Number(v))} value={field.value?.toString() || "none"}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhum (Sede)</SelectItem>
+                        {users?.filter(u => u.role === "driver").map(u => (
+                          <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}/>
+              </div>
+
               <FormField control={form.control} name="type" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Despesa</FormLabel>
@@ -229,7 +355,8 @@ export default function AdminInvoices() {
                 {selectedFile && <p className="text-xs text-muted-foreground flex items-center mt-1"><FileText className="w-3 h-3 mr-1" /> {selectedFile.name}</p>}
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-4 gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
                 <Button type="submit" disabled={createMutation.isPending || isUploading}>
                   {isUploading ? "A carregar anexo..." : (createMutation.isPending ? "A submeter..." : "Submeter Fatura")}
                 </Button>
