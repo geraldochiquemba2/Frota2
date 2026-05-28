@@ -341,13 +341,10 @@ export default function DriverFuelings() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {myVehicles.length === 0 ? (
-                        <SelectItem value="none" disabled>Nenhuma viatura atribuída</SelectItem>
-                      ) : (
-                        myVehicles.map(v => (
-                          <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
-                        ))
-                      )}
+                      <SelectItem value="none" disabled>Selecione a viatura</SelectItem>
+                      {myVehicles.map(v => (
+                        <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
