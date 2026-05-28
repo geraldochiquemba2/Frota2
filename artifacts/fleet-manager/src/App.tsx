@@ -24,6 +24,7 @@ import DriverDashboard from "@/pages/driver/dashboard";
 import DriverTrips from "@/pages/driver/trips";
 import DriverVehicle from "@/pages/driver/vehicle";
 import DriverInvoices from "@/pages/driver/invoices";
+import DriverFuelings from "@/pages/driver/fuelings";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/driver/dashboard">{() => <ProtectedRoute component={DriverDashboard} allowedRole="driver" layout={DriverLayout} />}</Route>
       <Route path="/driver/trips">{() => <ProtectedRoute component={DriverTrips} allowedRole="driver" layout={DriverLayout} />}</Route>
       <Route path="/driver/vehicle">{() => <ProtectedRoute component={DriverVehicle} allowedRole="driver" layout={DriverLayout} />}</Route>
+      <Route path="/driver/fuelings">{() => <ProtectedRoute component={DriverFuelings} allowedRole="driver" layout={DriverLayout} />}</Route>
       <Route path="/driver/invoices">{() => <ProtectedRoute component={DriverInvoices} allowedRole="driver" layout={DriverLayout} />}</Route>
 
       <Route component={NotFound} />

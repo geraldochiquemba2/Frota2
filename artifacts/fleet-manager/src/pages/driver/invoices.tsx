@@ -25,6 +25,7 @@ const invoiceSchema = z.object({
   amount: z.coerce.number().min(0.01, "Montante inválido"),
   date: z.string().min(1, "Data é obrigatória"),
   vehicleId: z.coerce.number().min(1, "Deve selecionar uma viatura"),
+  supplierId: z.coerce.number().optional().nullable(),
   notes: z.string().optional(),
 });
 
@@ -53,6 +54,15 @@ export default function DriverInvoices() {
     }
   });
 
+  const { data: suppliers } = useQuery<any[]>({
+    queryKey: ["/api/suppliers"],
+    queryFn: async () => {
+      const res = await fetch("/api/suppliers");
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: { 
@@ -60,7 +70,8 @@ export default function DriverInvoices() {
       type: "fueling", 
       amount: 0, 
       date: new Date().toISOString().split('T')[0],
-      vehicleId: myVehicles.length > 0 ? myVehicles[0].id : undefined
+      vehicleId: myVehicles.length > 0 ? myVehicles[0].id : undefined,
+      supplierId: null
     }
   });
 
@@ -90,7 +101,8 @@ export default function DriverInvoices() {
         type: "fueling",
         amount: 0,
         date: new Date().toISOString().split('T')[0],
-        vehicleId: myVehicles.length > 0 ? myVehicles[0].id : undefined
+        vehicleId: myVehicles.length > 0 ? myVehicles[0].id : undefined,
+        supplierId: null
       });
       toast({ title: "Fatura submetida com sucesso" });
     },
@@ -269,6 +281,26 @@ export default function DriverInvoices() {
                     <SelectContent>
                       <SelectItem value="fueling">Abastecimento (Combustível)</SelectItem>
                       <SelectItem value="maintenance">Manutenção (Oficina / Peças)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}/>
+              
+              <FormField control={form.control} name="supplierId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fornecedor (Fornecedores Cadastrados)</FormLabel>
+                  <Select onValueChange={(v) => field.onChange(v === "none" ? null : Number(v))} value={field.value?.toString() || "none"}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o fornecedor" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum / Posto Avulso</SelectItem>
+                      {suppliers?.map(s => (
+                        <SelectItem key={s.id} value={s.id.toString()}>{s.name} ({s.city})</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

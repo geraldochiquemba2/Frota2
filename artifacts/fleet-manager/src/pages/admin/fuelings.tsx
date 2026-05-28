@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useListFuelings, useCreateFueling, useUpdateFueling, useDeleteFueling, useListVehicles, useListUsers, Fueling } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, Droplets, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Droplets, Search, FileText } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
