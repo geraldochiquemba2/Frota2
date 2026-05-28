@@ -105,6 +105,14 @@ export default function DriverFuelings() {
     }
   }, [watchedLiters, watchedPrice, form]);
 
+  // Update vehicleId and mileage if vehicles load late
+  React.useEffect(() => {
+    if (myVehicles.length > 0 && !form.getValues("vehicleId")) {
+      form.setValue("vehicleId", myVehicles[0].id);
+      form.setValue("mileage", myVehicles[0].mileage);
+    }
+  }, [myVehicles, form]);
+
   // Set default vehicle mileage when vehicle selection changes
   const watchedVehicleId = form.watch("vehicleId");
   React.useEffect(() => {
@@ -326,16 +334,20 @@ export default function DriverFuelings() {
               <FormField control={form.control} name="vehicleId" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Viatura</FormLabel>
-                  <Select onValueChange={(v) => field.onChange(Number(v))} value={field.value?.toString()}>
+                  <Select onValueChange={(v) => field.onChange(v === "none" ? undefined : Number(v))} value={field.value?.toString() || "none"}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a viatura" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {myVehicles.map(v => (
-                        <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
-                      ))}
+                      {myVehicles.length === 0 ? (
+                        <SelectItem value="none" disabled>Nenhuma viatura atribuída</SelectItem>
+                      ) : (
+                        myVehicles.map(v => (
+                          <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />

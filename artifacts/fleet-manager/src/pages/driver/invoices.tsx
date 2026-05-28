@@ -236,16 +236,20 @@ export default function DriverInvoices() {
               <FormField control={form.control} name="vehicleId" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Viatura</FormLabel>
-                  <Select onValueChange={(v) => field.onChange(Number(v))} value={field.value?.toString()}>
+                  <Select onValueChange={(v) => field.onChange(v === "none" ? undefined : Number(v))} value={field.value?.toString() || "none"}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a viatura" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {myVehicles.map(v => (
-                        <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
-                      ))}
+                      {myVehicles.length === 0 ? (
+                        <SelectItem value="none" disabled>Nenhuma viatura atribuída</SelectItem>
+                      ) : (
+                        myVehicles.map(v => (
+                          <SelectItem key={v.id} value={v.id.toString()}>{v.plate} - {v.brand} {v.model}</SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
