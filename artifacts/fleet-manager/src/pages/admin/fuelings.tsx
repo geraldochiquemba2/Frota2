@@ -93,12 +93,41 @@ export default function AdminFuelings() {
     setDeleteId(null);
   }
 
+const FUEL_PRICES_AO_2026 = {
+  gasoline: 300,  // Gasolina - 300 Kz/litro
+  petrol: 300,
+  gasolina: 300,
+  diesel: 400,    // Gasóleo - 400 Kz/litro
+  gasoleo: 400,
+  gasóleo: 400,
+  default: 300,
+};
+
   // Auto-calculate total
   const liters = form.watch("liters");
   const ppl = form.watch("pricePerLiter");
   React.useEffect(() => {
     if (liters && ppl) form.setValue("totalCost", parseFloat((liters * ppl).toFixed(2)));
   }, [liters, ppl]);
+
+  // Auto-fill price per liter and other vehicle details when vehicle changes
+  const watchedVehicleId = form.watch("vehicleId");
+  React.useEffect(() => {
+    if (watchedVehicleId && !editItem) {
+      const v = vehicles?.find(vh => vh.id === Number(watchedVehicleId));
+      if (v) {
+        if (v.assignedDriverId) {
+          form.setValue("driverId", v.assignedDriverId);
+        }
+        if (v.mileage) {
+          form.setValue("mileage", v.mileage);
+        }
+        const fuelType = (v.fuelType || "diesel").toLowerCase();
+        const price = FUEL_PRICES_AO_2026[fuelType as keyof typeof FUEL_PRICES_AO_2026] ?? FUEL_PRICES_AO_2026.default;
+        form.setValue("pricePerLiter", price);
+      }
+    }
+  }, [watchedVehicleId, vehicles, editItem, form]);
 
   const filteredFuelings = fuelings?.filter(f => 
     (f.vehiclePlate || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -210,7 +239,20 @@ export default function AdminFuelings() {
                   <FormItem><FormLabel>Litros *</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="pricePerLiter" render={({ field }) => (
-                  <FormItem><FormLabel>Preço/L *</FormLabel><FormControl><Input type="number" step="0.001" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <FormLabel>Preço/L *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.001" 
+                        {...field} 
+                        readOnly 
+                        className="bg-muted text-muted-foreground cursor-not-allowed" 
+                      />
+                    </FormControl>
+                    <p className="text-[10px] text-muted-foreground">Preço Oficial Angola 2026</p>
+                    <FormMessage />
+                  </FormItem>
                 )} />
                 <FormField control={form.control} name="totalCost" render={({ field }) => (
                   <FormItem><FormLabel>Total (Kz) *</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>

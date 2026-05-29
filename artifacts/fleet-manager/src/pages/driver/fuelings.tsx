@@ -119,13 +119,26 @@ export default function DriverFuelings() {
     }
   }, [myVehicles, form]);
 
-  // Set default vehicle mileage when vehicle selection changes
+const FUEL_PRICES_AO_2026 = {
+  gasoline: 300,  // Gasolina - 300 Kz/litro
+  petrol: 300,
+  gasolina: 300,
+  diesel: 400,    // Gasóleo - 400 Kz/litro
+  gasoleo: 400,
+  gasóleo: 400,
+  default: 300,
+};
+
+// Set default vehicle mileage and fuel price when vehicle selection changes
   const watchedVehicleId = form.watch("vehicleId");
   React.useEffect(() => {
     if (watchedVehicleId) {
       const v = myVehicles.find(item => item.id === Number(watchedVehicleId));
       if (v) {
         form.setValue("mileage", v.mileage);
+        const fuelType = (v.fuelType || "diesel").toLowerCase();
+        const price = FUEL_PRICES_AO_2026[fuelType as keyof typeof FUEL_PRICES_AO_2026] ?? FUEL_PRICES_AO_2026.default;
+        form.setValue("pricePerLiter", price);
       }
     }
   }, [watchedVehicleId, myVehicles, form]);
@@ -386,7 +399,16 @@ export default function DriverFuelings() {
                 <FormField control={form.control} name="pricePerLiter" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Preço por Litro (Kz) *</FormLabel>
-                    <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        {...field} 
+                        readOnly 
+                        className="bg-muted text-muted-foreground cursor-not-allowed" 
+                      />
+                    </FormControl>
+                    <p className="text-[10px] text-muted-foreground">Preço Oficial Angola 2026</p>
                     <FormMessage/>
                   </FormItem>
                 )}/>
