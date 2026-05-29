@@ -25,15 +25,15 @@ router.use(requireAuth);
 // Admin-only routes
 router.use("/users", requireAdmin, usersRouter);
 router.use("/vehicles", vehiclesRouter);
-router.use("/fuelings", requireAdmin, fuelingsRouter);
+router.use("/fuelings", fuelingsRouter);
 router.use("/maintenance", requireAdmin, maintenanceRouter);
 router.use("/inventory", requireAdmin, inventoryRouter);
-router.use("/suppliers", requireAdmin, suppliersRouter);
+router.use("/suppliers", suppliersRouter);
 router.use("/finance", requireAdmin, financeRouter);
 router.use("/reports", requireAdmin, reportsRouter);
 router.use("/dashboard", requireAdmin, reportsRouter);
 router.use("/upload", uploadRouter);
-router.use("/invoices", requireAdmin, invoicesRouter);
+router.use("/invoices", invoicesRouter);
 
 // Role-mixed routes (internal logic handles roles)
 router.use("/trips", tripsRouter);

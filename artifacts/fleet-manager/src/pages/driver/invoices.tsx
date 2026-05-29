@@ -335,7 +335,7 @@ export default function DriverInvoices() {
               )}/>
 
               <div className="space-y-2">
-                <FormLabel>Anexar Fatura (PDF / JPG / PNG)</FormLabel>
+                <label className="text-sm font-medium leading-none">Anexar Fatura (PDF / JPG / PNG)</label>
                 <div className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors relative">
                   <Input 
                     type="file" 

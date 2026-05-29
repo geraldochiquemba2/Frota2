@@ -457,7 +457,7 @@ export default function DriverFuelings() {
               )}/>
 
               <div className="space-y-2">
-                <FormLabel>Anexar Talão / Fatura (PDF / Imagem)</FormLabel>
+                <label className="text-sm font-medium leading-none">Anexar Talão / Fatura (PDF / Imagem)</label>
                 <div className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors relative">
                   <Input 
                     type="file" 
