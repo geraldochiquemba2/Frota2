@@ -34,6 +34,12 @@ const fuelingSchema = z.object({
 
 type FormValues = z.infer<typeof fuelingSchema>;
 
+const formatDate = (dateStr: any) => {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? "-" : format(d, "dd/MM/yyyy");
+};
+
 export default function DriverFuelings() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -148,11 +154,12 @@ export default function DriverFuelings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...payload.fueling,
-          driverId: user?.id
+          driverId: user?.id,
+          documentUrl
         })
       });
-      if (!fuelingRes.ok) throw new Error("Erro ao registar abastecimento");
-      const createdFueling = await fuelingRes.json();
+      if (!fuelingRes.ok) throw new Error("Erro ao criar registo de abastecimento");
+      const fuelingResult = await fuelingRes.json();
 
       // 3. Create Invoice Record linked to fueling
       const invoiceRes = await fetch("/api/invoices", {
@@ -160,7 +167,7 @@ export default function DriverFuelings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...payload.invoice,
-          referenceId: createdFueling.id,
+          referenceId: fuelingResult.id,
           documentUrl,
           vehicleId: payload.fueling.vehicleId,
           driverId: user?.id
@@ -175,7 +182,7 @@ export default function DriverFuelings() {
         body: JSON.stringify({ mileage: payload.fueling.mileage })
       });
 
-      return createdFueling;
+      return fuelingResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/fuelings"] });
@@ -294,7 +301,7 @@ export default function DriverFuelings() {
                 return (
                   <TableRow key={fuel.id} className="hover:bg-muted/20 transition-colors">
                     <TableCell className="text-muted-foreground text-sm">
-                      {fuel.date ? format(new Date(fuel.date), "dd/MM/yyyy") : "-"}
+                      {formatDate(fuel.date)}
                     </TableCell>
                     <TableCell className="font-semibold font-mono text-sm">
                       {fuel.vehiclePlate || "Viatura #" + fuel.vehicleId}

@@ -31,6 +31,12 @@ const invoiceSchema = z.object({
 
 type FormValues = z.infer<typeof invoiceSchema>;
 
+const formatDate = (dateStr: any) => {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? "-" : format(d, "dd/MM/yyyy");
+};
+
 export default function DriverInvoices() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -196,7 +202,7 @@ export default function DriverInvoices() {
               {invoices?.map((inv: any) => (
                 <TableRow key={inv.id} className="hover:bg-muted/20 transition-colors">
                   <TableCell className="text-muted-foreground text-sm">
-                    {inv.date ? format(new Date(inv.date), "dd/MM/yyyy") : "-"}
+                    {formatDate(inv.date)}
                   </TableCell>
                   <TableCell className="font-medium font-mono">{inv.invoiceNumber}</TableCell>
                   <TableCell>
