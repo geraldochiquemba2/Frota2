@@ -25,6 +25,7 @@ router.get("/fuelings", requireAuth, async (req, res) => {
     const vehicle = vehicles.find(v => v.id === f.vehicleId);
     return {
       id: f.id, vehicleId: f.vehicleId, vehiclePlate: vehicle?.plate || null,
+      vehicleFuelType: vehicle?.fuelType || "diesel",
       driverId: f.driverId, driverName: driver?.name || null,
       date: f.date.toISOString(), liters: f.liters, pricePerLiter: f.pricePerLiter,
       totalCost: f.totalCost, mileage: f.mileage, station: f.station, notes: f.notes,
@@ -36,16 +37,53 @@ router.get("/fuelings", requireAuth, async (req, res) => {
   const totalCost = records.reduce((sum, r) => sum + r.totalCost, 0);
   const averagePricePerLiter = records.length > 0 ? totalCost / totalLiters : 0;
 
-  const byVehicleMap: Record<string, { totalLiters: number; totalCost: number }> = {};
+  let totalGasolineLiters = 0;
+  let totalGasolineCost = 0;
+  let totalDieselLiters = 0;
+  let totalDieselCost = 0;
+
+  const byVehicleMap: Record<string, { totalLiters: number; totalCost: number; gasolineCost: number; dieselCost: number; gasolineLiters: number; dieselLiters: number }> = {};
   records.forEach(r => {
     const plate = r.vehiclePlate || `ID:${r.vehicleId}`;
-    if (!byVehicleMap[plate]) byVehicleMap[plate] = { totalLiters: 0, totalCost: 0 };
+    const fuelType = (r.vehicleFuelType || "diesel").toLowerCase();
+    const isGasoline = fuelType === "gasoline" || fuelType === "petrol" || fuelType === "gasolina";
+    
+    if (isGasoline) {
+      totalGasolineLiters += r.liters;
+      totalGasolineCost += r.totalCost;
+    } else {
+      totalDieselLiters += r.liters;
+      totalDieselCost += r.totalCost;
+    }
+
+    if (!byVehicleMap[plate]) {
+      byVehicleMap[plate] = { totalLiters: 0, totalCost: 0, gasolineCost: 0, dieselCost: 0, gasolineLiters: 0, dieselLiters: 0 };
+    }
+    
     byVehicleMap[plate].totalLiters += r.liters;
     byVehicleMap[plate].totalCost += r.totalCost;
+    if (isGasoline) {
+      byVehicleMap[plate].gasolineCost += r.totalCost;
+      byVehicleMap[plate].gasolineLiters += r.liters;
+    } else {
+      byVehicleMap[plate].dieselCost += r.totalCost;
+      byVehicleMap[plate].dieselLiters += r.liters;
+    }
   });
+
   const byVehicle = Object.entries(byVehicleMap).map(([vehiclePlate, data]) => ({ vehiclePlate, ...data }));
 
-  res.json({ records, totalLiters, totalCost, averagePricePerLiter, byVehicle });
+  res.json({ 
+    records, 
+    totalLiters, 
+    totalCost, 
+    averagePricePerLiter, 
+    byVehicle,
+    totalGasolineLiters,
+    totalGasolineCost,
+    totalDieselLiters,
+    totalDieselCost
+  });
 });
 
 router.get("/maintenance", requireAuth, async (req, res) => {

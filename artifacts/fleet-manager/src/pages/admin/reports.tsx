@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Download, Droplets, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { formatNumber } from "@/lib/utils";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend, AreaChart, Area } from "recharts";
 
 function printReport(title: string, content: string) {
   const win = window.open("", "_blank");
@@ -59,26 +59,85 @@ export default function AdminReports() {
     endDate: fuelFilters.endDate || undefined, 
     vehicleId: fuelFilters.vehicleId ? Number(fuelFilters.vehicleId) : undefined 
   });
+  const fuelData = fuelQuery.data as any;
   const maintQuery = useGetMaintenanceReport({ 
     startDate: maintFilters.startDate || undefined, 
     endDate: maintFilters.endDate || undefined, 
     vehicleId: maintFilters.vehicleId ? Number(maintFilters.vehicleId) : undefined 
   });
+  const fuelStats = React.useMemo(() => {
+    if (!fuelData) return { gasolineCount: 0, dieselCount: 0 };
+    let gasolineCount = 0;
+    let dieselCount = 0;
+    fuelData.records.forEach((r: any) => {
+      const fuelType = (r.vehicleFuelType || "diesel").toLowerCase();
+      const isGasoline = fuelType === "gasoline" || fuelType === "petrol" || fuelType === "gasolina";
+      if (isGasoline) gasolineCount++;
+      else dieselCount++;
+    });
+    return { gasolineCount, dieselCount };
+  }, [fuelData]);
+
+  const maintenanceHistoryData = React.useMemo(() => {
+    if (!maintQuery.data || !maintQuery.data.records) return [];
+    const groups: Record<string, { monthKey: string; cost: number; rawDate: Date }> = {};
+    maintQuery.data.records.forEach((r: any) => {
+      if (!r.date) return;
+      const date = new Date(r.date);
+      const yearMonth = format(date, "yyyy-MM");
+      const label = format(date, "MM/yyyy");
+      if (!groups[yearMonth]) {
+        groups[yearMonth] = {
+          monthKey: label,
+          cost: 0,
+          rawDate: new Date(date.getFullYear(), date.getMonth(), 1)
+        };
+      }
+      groups[yearMonth].cost += r.cost || 0;
+    });
+    return Object.values(groups)
+      .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime())
+      .map(g => ({ month: g.monthKey, cost: g.cost }));
+  }, [maintQuery.data]);
+
+  const topVehiclesGeral = React.useMemo(() => {
+    if (!fuelData?.byVehicle) return [];
+    return [...fuelData.byVehicle]
+      .sort((a: any, b: any) => b.totalCost - a.totalCost)
+      .slice(0, 5);
+  }, [fuelData?.byVehicle]);
+
+  const topVehiclesGasolina = React.useMemo(() => {
+    if (!fuelData?.byVehicle) return [];
+    return [...fuelData.byVehicle]
+      .filter((v: any) => (v.gasolineCost ?? 0) > 0)
+      .sort((a: any, b: any) => b.gasolineCost - a.gasolineCost)
+      .slice(0, 5);
+  }, [fuelData?.byVehicle]);
+
+  const topVehiclesGasoleo = React.useMemo(() => {
+    if (!fuelData?.byVehicle) return [];
+    return [...fuelData.byVehicle]
+      .filter((v: any) => (v.dieselCost ?? 0) > 0)
+      .sort((a: any, b: any) => b.dieselCost - a.dieselCost)
+      .slice(0, 5);
+  }, [fuelData?.byVehicle]);
 
   function exportFueling() {
     if (!fuelQuery.data) return;
-    const d = fuelQuery.data;
-    const rows = d.records.map(r => `<tr><td>${r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</td><td>${r.vehiclePlate || r.vehicleId}</td><td>${r.driverName || "-"}</td><td>${formatNumber(r.liters, 1)} L</td><td>${formatNumber(r.pricePerLiter, 3)} Kz</td><td>${formatNumber(r.totalCost, 2)} Kz</td><td>${formatNumber(r.mileage, 0)} km</td><td>${r.station || "-"}</td></tr>`).join("");
+    const d = fuelQuery.data as any;
+    const rows = d.records.map((r: any) => `<tr><td>${r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</td><td>${r.vehiclePlate || r.vehicleId}</td><td>${r.driverName || "-"}</td><td>${r.vehicleFuelType === "gasoline" || r.vehicleFuelType === "petrol" || r.vehicleFuelType === "gasolina" ? "Gasolina" : "Gasóleo"}</td><td>${formatNumber(r.liters, 1)} L</td><td>${formatNumber(r.pricePerLiter, 3)} Kz</td><td>${formatNumber(r.totalCost, 2)} Kz</td><td>${formatNumber(r.mileage, 0)} km</td><td>${r.station || "-"}</td></tr>`).join("");
     printReport("Relatório de Abastecimentos", `
       <h1>Relatório de Abastecimentos</h1>
       <p>Gerado em ${format(new Date(), "dd/MM/yyyy HH:mm")}</p>
       <div class="summary">
-        <div class="stat"><div class="stat-value">${formatNumber(d.totalLiters, 1)} L</div><div class="stat-label">Total Litros</div></div>
         <div class="stat"><div class="stat-value">${formatNumber(d.totalCost, 2)} Kz</div><div class="stat-label">Custo Total</div></div>
-        <div class="stat"><div class="stat-value">${formatNumber(d.averagePricePerLiter, 3)} Kz</div><div class="stat-label">Preço Médio/L</div></div>
+        <div class="stat"><div class="stat-value">${formatNumber(d.totalLiters, 1)} L</div><div class="stat-label">Total Litros</div></div>
+        <div class="stat"><div class="stat-value">${formatNumber(d.totalGasolineCost ?? 0, 2)} Kz</div><div class="stat-label">Custo Gasolina</div></div>
+        <div class="stat"><div class="stat-value">${formatNumber(d.totalDieselCost ?? 0, 2)} Kz</div><div class="stat-label">Custo Gasóleo</div></div>
         <div class="stat"><div class="stat-value">${d.records.length}</div><div class="stat-label">Nº Abastecimentos</div></div>
       </div>
-      <table><thead><tr><th>Data</th><th>Viatura</th><th>Motorista</th><th>Litros</th><th>Preço/L</th><th>Total</th><th>Km</th><th>Posto</th></tr></thead><tbody>${rows}</tbody></table>
+      <table><thead><tr><th>Data</th><th>Viatura</th><th>Motorista</th><th>Tipo Combustível</th><th>Litros</th><th>Preço/L</th><th>Total</th><th>Km</th><th>Posto</th></tr></thead><tbody>${rows}</tbody></table>
     `);
   }
 
@@ -128,20 +187,70 @@ export default function AdminReports() {
             </CardContent>
           </Card>
 
-          {fuelQuery.data && (
+          {fuelData && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     {[
-                      { label: "Total Litros", value: `${formatNumber(fuelQuery.data.totalLiters, 1)} L` },
-                      { label: "Custo Total", value: `${formatNumber(fuelQuery.data.totalCost, 2)} Kz` },
-                      { label: "Preço Médio/L", value: `${formatNumber(fuelQuery.data.averagePricePerLiter, 3)} Kz` },
-                      { label: "Nº Registos", value: fuelQuery.data.records.length },
+                      { label: "Custo Total", value: `${formatNumber(fuelData.totalCost, 0)} Kz` },
+                      { label: "Total Litros", value: `${formatNumber(fuelData.totalLiters, 1)} L` },
+                      { label: "Total Gasolina", value: `${formatNumber(fuelData.totalGasolineCost ?? 0, 0)} Kz (${formatNumber(fuelData.totalGasolineLiters ?? 0, 1)} L)` },
+                      { label: "Total Gasóleo", value: `${formatNumber(fuelData.totalDieselCost ?? 0, 0)} Kz (${formatNumber(fuelData.totalDieselLiters ?? 0, 1)} L)` },
+                      { label: "Preço Médio/L", value: `${formatNumber(fuelData.averagePricePerLiter, 2)} Kz` },
+                      { label: "Nº Registos", value: fuelData.records.length },
                     ].map((s, i) => (
-                      <Card key={i} className="bg-card border-border shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground uppercase font-semibold">{s.label}</p><p className="text-lg font-bold mt-1 text-primary">{s.value}</p></CardContent></Card>
+                      <Card key={i} className="bg-card border-border shadow-sm"><CardContent className="p-4"><p className="text-xs text-muted-foreground uppercase font-semibold text-[10px]">{s.label}</p><p className="text-sm font-bold mt-1 text-primary truncate">{s.value}</p></CardContent></Card>
                     ))}
                   </div>
+
+                  {((fuelData.totalGasolineCost ?? 0) > 0 || (fuelData.totalDieselCost ?? 0) > 0) && (
+                    <Card className="bg-card border-border shadow-sm">
+                      <CardHeader className="pb-1"><CardTitle className="text-xs font-semibold uppercase text-muted-foreground">Distribuição por Combustível</CardTitle></CardHeader>
+                      <CardContent className="h-[120px] flex items-center justify-between p-4 pt-0">
+                        <ResponsiveContainer width="45%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={[
+                                { name: "Gasolina", value: fuelData.totalGasolineCost ?? 0, color: "#eab308" },
+                                { name: "Gasóleo", value: fuelData.totalDieselCost ?? 0, color: "#3b82f6" }
+                              ].filter(d => d.value > 0)}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={25}
+                              outerRadius={40}
+                              paddingAngle={4}
+                              dataKey="value"
+                            >
+                              {[
+                                { name: "Gasolina", value: fuelData.totalGasolineCost ?? 0, color: "#eab308" },
+                                { name: "Gasóleo", value: fuelData.totalDieselCost ?? 0, color: "#3b82f6" }
+                              ].filter(d => d.value > 0).map((entry, idx) => (
+                                <Cell key={`cell-${idx}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="flex flex-col gap-1 w-[55%] justify-center">
+                          {[
+                            { name: "Gasolina", value: fuelData.totalGasolineCost ?? 0, count: fuelStats.gasolineCount, color: "#eab308" },
+                            { name: "Gasóleo", value: fuelData.totalDieselCost ?? 0, count: fuelStats.dieselCount, color: "#3b82f6" }
+                          ].map((item, idx) => (
+                            <div key={idx} className="flex flex-col gap-0.5 text-[10px] w-full border-b border-border/30 pb-1 last:border-0 last:pb-0">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                                <span className="flex-1 font-medium">{item.name}</span>
+                                <span className="font-mono font-bold text-primary">{formatNumber(item.value, 0)} Kz</span>
+                              </div>
+                              <div className="pl-4 text-[9px] text-muted-foreground">
+                                {item.count} registos
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                   
                   {fuelFilters.vehicleId && (
                     <Card className="bg-primary/5 border-primary/20 shadow-sm">
@@ -154,30 +263,74 @@ export default function AdminReports() {
                   )}
                 </div>
 
-                <Card className="lg:col-span-2 bg-card border-border shadow-sm">
-                  <CardHeader><CardTitle className="text-sm font-semibold">Custo por Viatura (Top 10)</CardTitle></CardHeader>
-                  <CardContent className="h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={fuelQuery.data.byVehicle.slice(0, 10)}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                        <XAxis dataKey="vehiclePlate" fontSize={10} axisLine={false} tickLine={false} />
-                        <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} />
-                        <RechartsTooltip 
-                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
-                          formatter={(v: any) => [`${formatNumber(v, 0)} Kz`, 'Custo Total']}
-                        />
-                        <Bar dataKey="totalCost" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Top 5 Geral */}
+                  <Card className="bg-card border-border shadow-sm">
+                    <CardHeader className="pb-1"><CardTitle className="text-sm font-semibold">Custo de Abastecimento por Viatura (Top 5 Geral)</CardTitle></CardHeader>
+                    <CardContent className="h-[200px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={topVehiclesGeral}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                          <XAxis dataKey="vehiclePlate" fontSize={10} axisLine={false} tickLine={false} />
+                          <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} />
+                          <RechartsTooltip 
+                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                            formatter={(v: any, name: any) => [`${formatNumber(v, 0)} Kz`, name === 'gasolineCost' ? 'Gasolina' : name === 'dieselCost' ? 'Gasóleo' : name]}
+                          />
+                          <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={{ fontSize: 9 }} />
+                          <Bar dataKey="gasolineCost" name="Gasolina" stackId="a" fill="#eab308" />
+                          <Bar dataKey="dieselCost" name="Gasóleo (Diesel)" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* Top 5 Gasolina & Top 5 Gasóleo */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="bg-card border-border shadow-sm">
+                      <CardHeader className="pb-1"><CardTitle className="text-sm font-semibold text-[#eab308]">Top 5 - Gasolina</CardTitle></CardHeader>
+                      <CardContent className="h-[180px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={topVehiclesGasolina}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                            <XAxis dataKey="vehiclePlate" fontSize={10} axisLine={false} tickLine={false} />
+                            <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} />
+                            <RechartsTooltip 
+                              contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                              formatter={(v: any) => [`${formatNumber(v, 0)} Kz`, 'Gasolina']}
+                            />
+                            <Bar dataKey="gasolineCost" fill="#eab308" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-card border-border shadow-sm">
+                      <CardHeader className="pb-1"><CardTitle className="text-sm font-semibold text-[#3b82f6]">Top 5 - Gasóleo</CardTitle></CardHeader>
+                      <CardContent className="h-[180px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={topVehiclesGasoleo}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                            <XAxis dataKey="vehiclePlate" fontSize={10} axisLine={false} tickLine={false} />
+                            <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} />
+                            <RechartsTooltip 
+                              contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                              formatter={(v: any) => [`${formatNumber(v, 0)} Kz`, 'Gasóleo']}
+                            />
+                            <Bar dataKey="dieselCost" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </div>
 
               <div className="rounded-2xl border border-border overflow-hidden bg-card shadow-sm">
                 <Table>
                   <TableHeader><TableRow className="bg-muted/50"><TableHead>Data</TableHead><TableHead>Viatura</TableHead><TableHead>Motorista</TableHead><TableHead>Litros</TableHead><TableHead>Preço/L</TableHead><TableHead>Total</TableHead><TableHead>Km</TableHead></TableRow></TableHeader>
                   <TableBody>
-                    {fuelQuery.data.records.map(r => (
+                    {fuelData.records.map((r: any) => (
                       <TableRow key={r.id} className="hover:bg-muted/20 transition-colors">
                         <TableCell className="font-medium">{r.date ? format(new Date(r.date), "dd/MM/yyyy") : "-"}</TableCell>
                         <TableCell><Badge variant="outline">{r.vehiclePlate || r.vehicleId}</Badge></TableCell>
@@ -188,7 +341,7 @@ export default function AdminReports() {
                         <TableCell className="font-mono">{formatNumber(r.mileage, 0)} km</TableCell>
                       </TableRow>
                     ))}
-                    {fuelQuery.data.records.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">Nenhum abastecimento encontrado no período</TableCell></TableRow>}
+                    {fuelData.records.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">Nenhum abastecimento encontrado no período</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </div>
@@ -239,19 +392,25 @@ export default function AdminReports() {
                 </div>
 
                 <Card className="lg:col-span-2 bg-card border-border shadow-sm">
-                  <CardHeader><CardTitle className="text-sm font-semibold">Distribuição por Tipo</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-sm font-semibold">Gráfico de Histórico de Custos de Manutenção</CardTitle></CardHeader>
                   <CardContent className="h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={maintQuery.data.byType} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(255,255,255,0.05)" />
-                        <XAxis type="number" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} />
-                        <YAxis type="category" dataKey="type" fontSize={10} width={80} axisLine={false} tickLine={false} />
+                      <AreaChart data={maintenanceHistoryData}>
+                        <defs>
+                          <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="month" fontSize={10} axisLine={false} tickLine={false} />
+                        <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={(v) => `${v/1000}k`} />
                         <RechartsTooltip 
                           contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                           formatter={(v: any) => [`${formatNumber(v, 0)} Kz`, 'Custo']}
                         />
-                        <Bar dataKey="totalCost" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                      </BarChart>
+                        <Area type="monotone" dataKey="cost" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorCost)" />
+                      </AreaChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
